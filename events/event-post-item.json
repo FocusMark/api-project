@@ -1,5 +1,6 @@
 {
     "httpMethod": "POST",
+    "path": "/",
     "body": "{\"title\": \"My Basement project\"}",
     "Headers": {
         "Content-Type": "application/json;domain-command=create-workbook",

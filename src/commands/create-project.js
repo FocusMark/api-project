@@ -9,9 +9,10 @@ class CreateProjectCommand {
         this.type = type;
     }
     
-    async execute(httpEvent) {
+    async execute(httpEvent, requestBody) {
         let user = new JwtUser(httpEvent);
-        let project = new ProjectModel();
+        
+        let project = new ProjectModel(requestBody.title, user.userId);
         
         return new Response(202, null, null, project.projectId);
     }

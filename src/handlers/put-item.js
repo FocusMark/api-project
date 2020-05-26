@@ -19,15 +19,15 @@ exports.putItemHandler = async (event) => {
     
     try {
         command = commandFactory.fromCommand(desiredCommand);
-        if (command.type !== CommandTypes.CREATE) {
-            return new Response(404, null, `The '${command.command}' command can not be used with HTTP POST.`);
-        }
     } catch(err) {
         return new Response(404, null, err);
     }
     
+    if (command.type !== CommandTypes.CREATE) {
+        return new Response(404, null, `The '${command.command}' command can not be used with HTTP POST.`);
+    }
     console.info('Executing the command');
-    let response = await command.execute(event);
+    let response = await command.execute(event, body);
 
     console.info(`response from: ${event.path} statusCode: ${response.statusCode} body: ${response.body}`);
     return response;

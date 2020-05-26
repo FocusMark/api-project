@@ -26,7 +26,6 @@ class JwtUser {
         let json = buffer.toString('utf8');
         let user = JSON.parse(json);
         
-        this.sub = user.sub;
         this.userId = user.sub;
         this.username = user.username;
     }
