@@ -23,33 +23,56 @@ class ProjectModel {
     
     setStatus(status) {
         this.status = status;
+        this.updatedAt = Date.now();
     }
     
     validate() {
-        let validationConstraints = this.createValidationConstraints();
-        let validationResult = validate(this, validationConstraints);
-        console.info(validationResult);
+        let constraints = this.createValidationConstraints();
+        let validationResult = validate(this, constraints);
         return validationResult;
     }
     
     createValidationConstraints() {
-        let constraints = {
+        return {
             title: this.createTitleValidator(),
             userId: this.createUserValidator(),
+            status: this.createStatusValidator(),
         }
     }
     
     createTitleValidator() {
         return {
-            presence: true,
-            length: { minimum: 1, maximum: 100 },
+            presence: { allowEmpty: false },
+            length: { 
+                minimum: 1, 
+                maximum: 100,
+                message: 'Must be at least 6 characters in length and no more than 100'
+            },
+            type: 'string'
+        };
+    }
+    
+    createStatusValidator() {
+        // Construct a list of all allowed Status from the object itself and constrain to that list.
+        let allowedStatus = [];
+        for(const property in Status) {
+            let value = Status[property];
+            allowedStatus.push(value);
+        }
+        
+        return {
+            presence: { allowEmpty: false },
             type: 'string',
+            inclusion: { 
+                within: allowedStatus, 
+                message: "'%{value}' is not allowed"
+            }
         }
     }
     
-    createTitleValidator() {
+    createUserValidator() {
         return {
-            presence: true,
+            presence: { allowEmpty: false },
             type: 'string',
             format: '/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i'
         }
