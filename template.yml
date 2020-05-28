@@ -12,68 +12,184 @@ Description: >-
 Transform:
 - AWS::Serverless-2016-10-31
 
+Parameters:
+  TargetEnvironment:
+    Description: 'Examples can be dev, test or prod'
+    Type: 'String'
+
 # Resources declares the AWS resources that you want to include in the stack
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
 Resources:
+     
+  ProjectTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Sub 'focusmark-${TargetEnvironment}-sns-project'
+      TopicName: !Sub 'focusmark-${TargetEnvironment}-sns-project'
+  
+  # Auth setup example from https://github.com/awslabs/serverless-application-model/blob/master/examples/2016-10-31/api_cognito_auth/template.yaml
+  ProjectApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref TargetEnvironment
+      Name: !Sub 'focusmark-${TargetEnvironment}-apigateway-project'
+      # Auth:
+      #   DefaultAuthorizer: ApiGetProjectAuthorizer
+      #   Authorizers:
+      #     ApiPostProjectAuthorizer:
+      #       UserPoolArn: {'Fn::ImportValue': !Sub 'focusmark-${TargetEnvironment}-userpool'}
+      #       Identity: 
+      #         Header: 'Authorization'
+      #       AuthorizationScopes:
+      #         - "app.focusmark.project/project.write"
+      #     ApiGetProjectAuthorizer:
+      #       UserPoolArn: {'Fn::ImportValue': !Sub 'focusmark-${TargetEnvironment}-userpool'}
+      #       Identity: 
+      #         Header: 'Authorization'
+      #       AuthorizationScopes:
+      #         - "app.focusmark.project/project.read"
+  
+  # Define the resource scopes that the User Pool can issue via OAuth tokens
+  # API Gateway routes can then declare that they need these scopes to authorize requests.
+  ProjectResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      UserPoolId: {'Fn::ImportValue': !Sub 'focusmark-${TargetEnvironment}-userpoolid'}
+      Identifier: !Sub "app.focusmark.api.project"
+      Name: !Sub "focusmark-${TargetEnvironment}-resourceserver-project"
+      Scopes:
+        - ScopeName: "project.write"
+          ScopeDescription: "Create and modify Projects"
+        - ScopeName: "project.read"
+          ScopeDescription: "Read existing Projects"
+
+  postItemFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: !Sub 'Allows querying from ${ProjectTable}'
+      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_post'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_post'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 'sns:Publish'
+                Resource: !Ref ProjectTopic
+              - Effect: Allow
+                Action: 
+                  - 'dynamodb:PutItem'
+                  - 'dynamodb:GetItem'
+                Resource: !GetAtt ProjectTable.Arn
+              - Effect: Allow
+                Action: 
+                  - 'xray:CreateGroup'
+                  - 'xray:CreateSamplingRule'
+                Resource: 
+                  - 'arn:aws:xray:*:*:group/*/*'
+                  - 'arn:aws:xray:*:*:sampling-rule/*'
+              - Effect: Allow
+                Action:
+                  - 'xray:PutTelemetryRecords'
+                  - 'xray:PutTraceSegments'
+                Resource: '*'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+
   # Each Lambda function is defined by properties:
   # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
 
   # This is a Lambda function config associated with the source code: get-all-items.js
-  getAllItemsFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: src/handlers/get-all-items.getAllItemsHandler
-      Runtime: nodejs12.x
-      MemorySize: 128
-      Timeout: 100
-      Description: A simple example includes a HTTP get method to get all items from a DynamoDB table.
-      Policies:
-      Environment:
-        Variables:
-      Events:
-        Api:
-          Type: Api
-          Properties:
-            Path: /
-            Method: GET
+  # getAllItemsFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     Handler: src/handlers/get-all-items.getAllItemsHandler
+  #     Runtime: nodejs12.x
+  #     MemorySize: 128
+  #     Timeout: 100
+  #     Description: A simple example includes a HTTP get method to get all items from a DynamoDB table.
+  #     Policies:
+  #     Environment:
+  #       Variables:
+  #     Events:
+  #       Api:
+  #         Type: Api
+  #         Properties:
+  #           Path: /
+  #           Method: GET
 
   # This is a Lambda function config associated with the source code: get-by-id.js
-  getByIdFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: src/handlers/get-by-id.getByIdHandler
-      Runtime: nodejs12.x
-      MemorySize: 128
-      Timeout: 100
-      Description: A simple example includes a HTTP get method to get one item by id from a DynamoDB table.
-      Policies:
-      Environment:
-        Variables:
-      Events:
-        Api:
-          Type: Api
-          Properties:
-            Path: /{id}
-            Method: GET
+  # getByIdFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     Handler: src/handlers/get-by-id.getByIdHandler
+  #     Runtime: nodejs12.x
+  #     MemorySize: 128
+  #     Timeout: 100
+  #     Description: A simple example includes a HTTP get method to get one item by id from a DynamoDB table.
+  #     Policies:
+  #     Environment:
+  #       Variables:
+  #     Events:
+  #       Api:
+  #         Type: Api
+  #         Properties:
+  #           Path: /{id}
+  #           Method: GET
 
   # This is a Lambda function config associated with the source code: put-item.js
   postItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/put-item.putItemHandler
+      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_post'
+      Handler: src/handlers/post-item.postItemHandler
       Runtime: nodejs12.x
       MemorySize: 128
-      Timeout: 100
-      Description: A simple example includes a HTTP post method to add one item to a DynamoDB table.
-      Policies:
+      Timeout: 1000
+      Description: HTT POST handler for the /project API endpoint
+      Role: !GetAtt postItemFunctionRole.Arn
       Environment:
         Variables:
+          deployed_environment: $TargetEnvironment
+          dynamodb_projectTable: ''
+          dynamodb_endpointUrl: ''
       Events:
         Api:
           Type: Api
           Properties:
+#            Auth:
+#              Authorizer: ApiPostProjectAuthorizer
             Path: /
             Method: POST
+            RestApiId:
+              Ref: ProjectApi
+            
+  ProjectTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamo-project'
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: projectId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: projectId
+          KeyType: RANGE
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
 
 Outputs:
   WebEndpoint:

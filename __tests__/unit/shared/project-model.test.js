@@ -12,6 +12,11 @@ describe('Test constructor', function () {
     let userId = uuidv4();
     let title = 'test project';
     let defaultStatus = Status.PLANNING;
+    
+    it('should assign projectId to the model', () => {
+        let project = new ProjectModel(title, userId);
+        expect(project.projectId).to.exist;
+    });
         
     it('should assign userId to the model', () => {
         let project = new ProjectModel(title, userId);

@@ -1,17 +1,18 @@
 class JwtUser {
     constructor(httpEvent) {
-        let authHeader = httpEvent.Headers['Authorization'];
-        if (!authHeader) {
-            throw 'Authorization header missing';
+        if (!httpEvent || !httpEvent.headers || !httpEvent.headers['Authorization']) {
+            throw Error('Authorization header missing');
         }
+        
+        let authHeader = httpEvent.headers['Authorization'];
         
         if (!authHeader.startsWith('Bearer')) {
-            throw 'Bearer token is missing';
+            throw Error('Bearer token is missing');
         }
         
-        let splitResult = authHeader.split(' ');
+        let splitResult = authHeader.trim().split(' ');
         if (splitResult.length != 2) {
-            throw 'Missing Jwt token';
+            throw Error('Missing Jwt token');
         }
         
         this.jwt = splitResult[1];
