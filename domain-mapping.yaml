@@ -1,0 +1,13 @@
+Parameters:
+  TargetEnvironment:
+    Description: 'Examples can be dev, test or prod'
+    Type: 'String'
+
+Resources:
+  ProjectApiDomainMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties: 
+      BasePath: project
+      DomainName: {'Fn::ImportValue': !Sub 'focusmark-${TargetEnvironment}-apigw-customdomain'}
+      RestApiId: {'Fn::ImportValue': !Sub 'focusmark-${TargetEnvironment}-apigateway-project'}
+      Stage: !Ref TargetEnvironment

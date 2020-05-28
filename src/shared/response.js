@@ -9,11 +9,20 @@ class Response {
      * 
      */
     constructor(statusCode, data, errors, createdLocation) {
-        this.body = JSON.stringify({
+        let body = {
             data: data,
             errors: errors,
             isSuccessful: errors ? false : true,
-        });
+        };
+        
+        if (!body.data) {
+            body.data = {};
+        }
+        if (!body.errors) {
+            body.errors = [];
+        }
+        
+        this.body = JSON.stringify(body);
         
         this.statusCode = statusCode;
         this.headers = {

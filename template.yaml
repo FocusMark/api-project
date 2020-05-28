@@ -33,21 +33,21 @@ Resources:
     Properties:
       StageName: !Ref TargetEnvironment
       Name: !Sub 'focusmark-${TargetEnvironment}-apigateway-project'
-      # Auth:
-      #   DefaultAuthorizer: ApiGetProjectAuthorizer
-      #   Authorizers:
-      #     ApiPostProjectAuthorizer:
-      #       UserPoolArn: {'Fn::ImportValue': !Sub 'focusmark-${TargetEnvironment}-userpool'}
-      #       Identity: 
-      #         Header: 'Authorization'
-      #       AuthorizationScopes:
-      #         - "app.focusmark.project/project.write"
-      #     ApiGetProjectAuthorizer:
-      #       UserPoolArn: {'Fn::ImportValue': !Sub 'focusmark-${TargetEnvironment}-userpool'}
-      #       Identity: 
-      #         Header: 'Authorization'
-      #       AuthorizationScopes:
-      #         - "app.focusmark.project/project.read"
+      Auth:
+        DefaultAuthorizer: ApiGetProjectAuthorizer
+        Authorizers:
+          ApiPostProjectAuthorizer:
+            UserPoolArn: {'Fn::ImportValue': !Sub 'focusmark-${TargetEnvironment}-userpool'}
+            Identity: 
+              Header: 'Authorization'
+            AuthorizationScopes:
+              - "app.focusmark.api.project/project.write"
+          ApiGetProjectAuthorizer:
+            UserPoolArn: {'Fn::ImportValue': !Sub 'focusmark-${TargetEnvironment}-userpool'}
+            Identity: 
+              Header: 'Authorization'
+            AuthorizationScopes:
+              - "app.focusmark.api.project/project.read"
   
   # Define the resource scopes that the User Pool can issue via OAuth tokens
   # API Gateway routes can then declare that they need these scopes to authorize requests.
@@ -154,20 +154,20 @@ Resources:
       Handler: src/handlers/post-item.postItemHandler
       Runtime: nodejs12.x
       MemorySize: 128
-      Timeout: 1000
+      Timeout: 10
       Description: HTT POST handler for the /project API endpoint
       Role: !GetAtt postItemFunctionRole.Arn
       Environment:
         Variables:
           deployed_environment: $TargetEnvironment
-          dynamodb_projectTable: ''
+          dynamodb_projectTable: !Ref ProjectTable
           dynamodb_endpointUrl: ''
       Events:
         Api:
           Type: Api
           Properties:
-#            Auth:
-#              Authorizer: ApiPostProjectAuthorizer
+            Auth:
+              Authorizer: ApiPostProjectAuthorizer
             Path: /
             Method: POST
             RestApiId:
@@ -192,6 +192,16 @@ Resources:
         WriteCapacityUnits: 2
 
 Outputs:
-  WebEndpoint:
-    Description: "API Gateway endpoint URL for Prod stage"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  ProjectApiEndPoint:
+    Description: "API Gateway endpoint URL for target environment stage"
+    Value: !Sub "https://${ProjectApi}.execute-api.${AWS::Region}.amazonaws.com/${TargetEnvironment}/"
+  ProjectCreatedTopic:
+    Description: "SNS Topic for publishing notifications relatled to Projects"
+    Value: !Ref ProjectTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-ProjectTopic"
+  ProjectApiId:
+    Description: "ID of the Project API resource"
+    Value: !Ref ProjectApi
+    Export:
+      Name: !Sub 'focusmark-${TargetEnvironment}-apigateway-project'
