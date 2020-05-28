@@ -45,7 +45,7 @@ describe('Test putItemHandler', function () {
             }),
             headers: {
                 'Content-Type': `application/json;${CommandParameterKey}=${DomainCommands.CREATE_PROJECT}`,
-                Authorization: token
+                Authorization: `Bearer ${token}`
             }
         }; 
      
@@ -54,7 +54,9 @@ describe('Test putItemHandler', function () {
         let body = JSON.parse(result.body);
 
         // Compare the result with the expected result 
+        console.info(body);
         expect(body.data).to.not.exist;
+        expect(result.headers.Location).to.exist;
     }); 
 }); 
  

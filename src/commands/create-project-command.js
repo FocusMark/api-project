@@ -21,7 +21,7 @@ class CreateProjectCommand {
     async execute(httpEvent) {
 
         console.info('Parsing request body');
-        const requestBody = JSON.parse(event.body);
+        const requestBody = JSON.parse(httpEvent.body);
     
         console.info('Building command dependencies');
         let dynamoDbClient = new AWS.DynamoDB.DocumentClient();
@@ -45,6 +45,7 @@ class CreateProjectCommand {
             return new Response(400, null, err);
         }
         
+        console.info(project);
         return new Response(202, null, null, project.projectId);
     }
     

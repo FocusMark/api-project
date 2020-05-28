@@ -33,6 +33,7 @@ exports.postItemHandler = async (event, context) => {
     console.info('Executing the command');
     try {
         let response = await command.execute(event);
+        console.info(response);
         return response;
     } catch(err) {
         console.info(err.message);
