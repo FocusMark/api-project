@@ -43,20 +43,6 @@ Resources:
               Header: 'Authorization'
             AuthorizationScopes:
               - "app.focusmark.api.project/project.read"
-  
-  # Cognito Resource Server
-  # Define the resource scopes that the User Pool can issue via OAuth tokens. API Gateway routes can then declare that they need these scopes to authorize requests.
-  ProjectResourceServer:
-    Type: AWS::Cognito::UserPoolResourceServer
-    Properties:
-      UserPoolId: {'Fn::ImportValue': !Sub 'focusmark-${TargetEnvironment}-userpoolid'}
-      Identifier: !Sub "app.focusmark.api.project"
-      Name: !Sub "focusmark-${TargetEnvironment}-resourceserver-project"
-      Scopes:
-        - ScopeName: "project.write"
-          ScopeDescription: "Create and modify Projects"
-        - ScopeName: "project.read"
-          ScopeDescription: "Read existing Projects"
 
   # IAM Role used by the Lambda for handling HTTP POST requests that create projects.
   postItemFunctionRole:
