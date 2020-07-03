@@ -23,17 +23,6 @@ class Configuration {
         if (!this.deployed_environment) {
             this.deployed_environment = 'local';
         }
-        
-        // The SAM Template defines an empty endpointUrl environment variable in
-        // order to expose the dynamodb_endpointUrl to the Lambda when running
-        // locally via SAM CLI. The host OS environment variables are not passed
-        // threw to the local SAM session unless it is defined in the template.
-        // If the blank Url is found we assume we're running in AWS and delete
-        // the config property. If there is a value then we assume we are
-        // running locally and leave it as-is.
-        if (this.data.dynamodb_endpointUrl === '') {
-            delete this.data.dynamodb_endpointUrl;
-        }
     }
 }
 

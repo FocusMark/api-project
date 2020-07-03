@@ -1,11 +1,6 @@
-# This is the SAM template that represents the architecture of your serverless application
-# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-template-basics.html
-
-# The AWSTemplateFormatVersion identifies the capabilities of the template
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/format-version-structure.html
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-  api-project
+  FocusMark REST services for the Project API. Includes API, SNS Topic, DynamoDB and Cognito Resource Server
 
 # Transform section specifies one or more macros that AWS CloudFormation uses to process your template
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
@@ -17,16 +12,16 @@ Parameters:
     Description: 'Examples can be dev, test or prod'
     Type: 'String'
 
-# Resources declares the AWS resources that you want to include in the stack
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
 Resources:
-     
+
+  # SNS Topic used for publishing events as side-effects to Commands.     
   ProjectTopic:
     Type: AWS::SNS::Topic
     Properties:
       DisplayName: !Sub 'focusmark-${TargetEnvironment}-sns-project'
       TopicName: !Sub 'focusmark-${TargetEnvironment}-sns-project'
   
+  # API Gateway used by the Project API.
   # Auth setup example from https://github.com/awslabs/serverless-application-model/blob/master/examples/2016-10-31/api_cognito_auth/template.yaml
   ProjectApi:
     Type: AWS::Serverless::Api
@@ -49,8 +44,8 @@ Resources:
             AuthorizationScopes:
               - "app.focusmark.api.project/project.read"
   
-  # Define the resource scopes that the User Pool can issue via OAuth tokens
-  # API Gateway routes can then declare that they need these scopes to authorize requests.
+  # Cognito Resource Server
+  # Define the resource scopes that the User Pool can issue via OAuth tokens. API Gateway routes can then declare that they need these scopes to authorize requests.
   ProjectResourceServer:
     Type: AWS::Cognito::UserPoolResourceServer
     Properties:
@@ -63,6 +58,7 @@ Resources:
         - ScopeName: "project.read"
           ScopeDescription: "Read existing Projects"
 
+  # IAM Role used by the Lambda for handling HTTP POST requests that create projects.
   postItemFunctionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -105,10 +101,34 @@ Resources:
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
 
-  # Each Lambda function is defined by properties:
-  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+  # Lambda for handling HTTP POST requests that create projects.
+  postItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_post'
+      Handler: src/handlers/post-item.postItemHandler
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 10
+      Description: HTT POST handler for the /project API endpoint
+      Role: !GetAtt postItemFunctionRole.Arn
+      Environment:
+        Variables:
+          deployed_environment: $TargetEnvironment
+          dynamodb_projectTable: !Ref ProjectTable
+          dynamodb_endpointUrl: ''
+          sns_create_project_topic: !Ref ProjectTopic
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Auth:
+              Authorizer: ApiPostProjectAuthorizer
+            Path: /
+            Method: POST
+            RestApiId:
+              Ref: ProjectApi
 
-  # This is a Lambda function config associated with the source code: get-all-items.js
   # getAllItemsFunction:
   #   Type: AWS::Serverless::Function
   #   Properties:
@@ -127,7 +147,6 @@ Resources:
   #           Path: /
   #           Method: GET
 
-  # This is a Lambda function config associated with the source code: get-by-id.js
   # getByIdFunction:
   #   Type: AWS::Serverless::Function
   #   Properties:
@@ -145,38 +164,12 @@ Resources:
   #         Properties:
   #           Path: /{id}
   #           Method: GET
-
-  # This is a Lambda function config associated with the source code: put-item.js
-  postItemFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_post'
-      Handler: src/handlers/post-item.postItemHandler
-      Runtime: nodejs12.x
-      MemorySize: 128
-      Timeout: 10
-      Description: HTT POST handler for the /project API endpoint
-      Role: !GetAtt postItemFunctionRole.Arn
-      Environment:
-        Variables:
-          deployed_environment: $TargetEnvironment
-          dynamodb_projectTable: !Ref ProjectTable
-          dynamodb_endpointUrl: ''
-      Events:
-        Api:
-          Type: Api
-          Properties:
-            Auth:
-              Authorizer: ApiPostProjectAuthorizer
-            Path: /
-            Method: POST
-            RestApiId:
-              Ref: ProjectApi
             
+  # DynamoDB Table for storing the Project records
   ProjectTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamo-project'
+      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-project'
       AttributeDefinitions:
         - AttributeName: userId
           AttributeType: S
@@ -188,6 +181,25 @@ Resources:
         - AttributeName: projectId
           KeyType: RANGE
       ProvisionedThroughput: 
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+        
+  # DynamoDB Table for storing the Project events
+  ProjectTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-projectevents'
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: projectId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: projectId
+          KeyType: RANGE
+      ProvisionedThroughput:
         ReadCapacityUnits: 2
         WriteCapacityUnits: 2
 

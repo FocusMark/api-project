@@ -1,4 +1,7 @@
+const Configuration = require('../shared/configuration');
 const CreateProjectCommand = require('../commands/create-project-command');
+
+const AWS = require('aws-sdk');
 
 /** Represents a valid and supported set of Domain commands. **/
 const DomainCommands = {
@@ -15,6 +18,7 @@ class CommandFactory {
     
     constructor() {
         console.info('Instantiating Commandfactory. Creating list of allowed Commands');
+        this.configuration = new Configuration();
         this.allowedCommands = [];
         for(const property in DomainCommands) {
             this.allowedCommands.push(DomainCommands[property]);
@@ -36,8 +40,14 @@ class CommandFactory {
             // Make sure that if additional commands are added that the command-factory.test.js is updated.
             case DomainCommands.CREATE_PROJECT:
                 console.info(`Command is identified as the ${DomainCommands.CREATE_PROJECT} command. Instantiating the associated Command.`);
-                return new CreateProjectCommand(command, CommandTypes.CREATE);
+                return this.getCreateProjectCommand(command, CommandTypes.CREATE);
         }
+    }
+    
+    getCreateProjectCommand(command, type) {
+        let dynamoDbClient = new AWS.DynamoDB.DocumentClient();
+        let sns = new AWS.SNS();
+        return new CreateProjectCommand(command, CommandTypes.CREATE, dynamoDbClient, sns);
     }
 }
 

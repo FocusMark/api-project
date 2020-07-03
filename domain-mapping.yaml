@@ -1,3 +1,6 @@
+Description: >-
+  FocusMark Domain mapping for the the Project API to the FocusMark API Gateway Custom Domain (typically api.focusmark.app)
+
 Parameters:
   TargetEnvironment:
     Description: 'Examples can be dev, test or prod'
