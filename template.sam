@@ -142,15 +142,14 @@ Resources:
         
   # Project SNS subscriber within the Project API
   projectSnsSubscriberFunction:
-    Type: AWS::Serverless::Function
+    Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_sns_subscriber'
-      Handler: src/handlers/sns-handler.handler
+      CodeUri: 'src/handlers/'
+      Handler: sns-handler.handler
       Runtime: nodejs12.x
-      MemorySize: 128
-      Timeout: 10
-      Description: HTT POST handler for the /project API endpoint
-      Role: !GetAtt postItemFunctionRole.Arn
+      Role: !GetAtt projectSnsSubscriberFunctionRole.Arn
+      FunctionName: !Sub "focusmark-${TargetEnvironment}-lambda-api_project_sns_subscriber"
+      Description: 'Consumes Project SNS events from an SNS Topic and stores it in a datastore.'
       Environment:
         Variables:
           deployed_environment: $TargetEnvironment
@@ -158,16 +157,9 @@ Resources:
           dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
           dynamodb_endpointUrl: ''
           sns_project_topic: !Ref ProjectTopic
-      Events:
-        Api:
-          Type: Api
-          Properties:
-            Auth:
-              Authorizer: ApiPostProjectAuthorizer
-            Path: /
-            Method: POST
-            RestApiId:
-              Ref: ProjectApi
+      MemorySize: 128
+      Timeout: 900
+      Tracing: Active
 
   # Lambda for handling HTTP POST requests that create projects.
   postItemFunction:
@@ -232,6 +224,21 @@ Resources:
   #         Properties:
   #           Path: /{id}
   #           Method: GET
+            
+  ProjectTopicLambdaSubscription:
+    Type: AWS::SNS::Subscription
+    Properties: 
+      Protocol: lambda
+      Endpoint: !GetAtt projectSnsSubscriberFunction.Arn
+      TopicArn: !Ref ProjectTopic
+      
+  ProjectSubscriberLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref projectSnsSubscriberFunction
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref ProjectTopic
             
   # DynamoDB Table for storing the Project records
   ProjectTable:

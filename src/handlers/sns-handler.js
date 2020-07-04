@@ -1,3 +1,8 @@
+const Configuration = require('../shared/configuration');
+const JwtUser = require('../shared/jwt-user');
+const ProjectModel = require('../shared/project-model');
+const Methodologies = require('../shared/methodologies');
+const Status = require('../shared/status');
 const Response = require('../shared/response');
 
 let AWSXRay = require('aws-xray-sdk');
@@ -5,11 +10,12 @@ let AWS = AWSXRay.captureAWS(require('aws-sdk'));
 
 exports.handler = async (event, context) => {
     let segment = AWSXRay.getSegment();
-    let commandParseSegment = segment.addNewSubsegment('postItemHandler.command-parse');
+    let eventParse = segment.addNewSubsegment('sns-handler.event-parse');
     
-    let commandExecuteSegment = segment.addNewSubsegment('postItemHandler.command-execute');
+    
+    
     let response = new Response(200, {} );
     
-    commandParseSegment.close();
+    eventParse.close();
     return response;
 }
