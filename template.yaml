@@ -161,7 +161,7 @@ Resources:
   ProjectTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-project'
+      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodåb-project'
       AttributeDefinitions:
         - AttributeName: userId
           AttributeType: S
@@ -177,7 +177,7 @@ Resources:
         WriteCapacityUnits: 2
         
   # DynamoDB Table for storing the Project events
-  ProjectTable:
+  ProjectEventSourceTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-projectevents'
