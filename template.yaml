@@ -103,7 +103,7 @@ Resources:
           deployed_environment: $TargetEnvironment
           dynamodb_projectTable: !Ref ProjectTable
           dynamodb_endpointUrl: ''
-          sns_create_project_topic: !Ref ProjectTopic
+          sns_project_topic: !Ref ProjectTopic
       Events:
         Api:
           Type: Api

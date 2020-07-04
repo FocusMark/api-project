@@ -10,7 +10,7 @@ class Configuration {
         this.deployed_environment = process.env.deployed_environment;
         
         this.events = {
-            topic: process.env.sns_create_project_topic,
+            topic: process.env.sns_project_topic,
         };
         
         this.data = {
