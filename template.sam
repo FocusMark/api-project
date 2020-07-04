@@ -50,11 +50,59 @@ Resources:
             AuthorizationScopes:
               - "app.focusmark.api.project/project.read"
 
+
+  # IAM Role used by the Lambda for handling HTTP POST requests that create projects.
+  projectSnsSubscriberFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: !Sub 'Allows querying from ${ProjectEventSourceTable} and producing a queryable view of the data in the ${ProjectTable} table'
+      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_sns_subscriber'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_sns_subscriber'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 'sns:Publish'
+                Resource: !Ref ProjectTopic
+              - Effect: Allow
+                Action: 
+                  - 'dynamodb:GetItem'
+                  - 'dynamodb:Query'
+                Resource: !GetAtt ProjectEventSourceTable.Arn
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:PutItem'
+                Resource: !GetAtt ProjectTable.Arn
+              - Effect: Allow
+                Action: 
+                  - 'xray:CreateGroup'
+                  - 'xray:CreateSamplingRule'
+                Resource: 
+                  - 'arn:aws:xray:*:*:group/*/*'
+                  - 'arn:aws:xray:*:*:sampling-rule/*'
+              - Effect: Allow
+                Action:
+                  - 'xray:PutTelemetryRecords'
+                  - 'xray:PutTraceSegments'
+                Resource: '*'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        
   # IAM Role used by the Lambda for handling HTTP POST requests that create projects.
   postItemFunctionRole:
     Type: AWS::IAM::Role
     Properties:
-      Description: !Sub 'Allows querying from ${ProjectTable}'
+      Description: !Sub 'Allows inserting new records into the ${ProjectEventSourceTable} table'
       RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_post'
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -76,8 +124,7 @@ Resources:
               - Effect: Allow
                 Action: 
                   - 'dynamodb:PutItem'
-                  - 'dynamodb:GetItem'
-                Resource: !GetAtt ProjectTable.Arn
+                Resource: !GetAtt ProjectEventSourceTable.Arn
               - Effect: Allow
                 Action: 
                   - 'xray:CreateGroup'
@@ -92,6 +139,35 @@ Resources:
                 Resource: '*'
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        
+  # Project SNS subscriber within the Project API
+  projectSnsSubscriberFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_sns_subscriber'
+      Handler: src/handlers/sns-handler.handler
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 10
+      Description: HTT POST handler for the /project API endpoint
+      Role: !GetAtt postItemFunctionRole.Arn
+      Environment:
+        Variables:
+          deployed_environment: $TargetEnvironment
+          dynamodb_projectTable: !Ref ProjectTable
+          dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
+          dynamodb_endpointUrl: ''
+          sns_project_topic: !Ref ProjectTopic
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Auth:
+              Authorizer: ApiPostProjectAuthorizer
+            Path: /
+            Method: POST
+            RestApiId:
+              Ref: ProjectApi
 
   # Lambda for handling HTTP POST requests that create projects.
   postItemFunction:
@@ -107,7 +183,6 @@ Resources:
       Environment:
         Variables:
           deployed_environment: $TargetEnvironment
-          dynamodb_projectTable: !Ref ProjectTable
           dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
           dynamodb_endpointUrl: ''
           sns_project_topic: !Ref ProjectTopic
