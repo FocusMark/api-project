@@ -28,6 +28,12 @@ Resources:
     Properties:
       StageName: !Ref TargetEnvironment
       Name: !Sub 'focusmark-${TargetEnvironment}-apigateway-project'
+      MethodSettings:
+        - LoggingLevel: 'INFO'
+          ResourcePath: '/'
+          MetricsEnabled: 'true'
+          DataTraceEnabled: 'true'
+          HttpMethod: '*'
       Auth:
         DefaultAuthorizer: ApiGetProjectAuthorizer
         Authorizers:
