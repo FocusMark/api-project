@@ -1,0 +1,287 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  FocusMark REST services for the Project API. Includes API, SNS Topic, DynamoDB and Cognito Resource Server
+
+# Transform section specifies one or more macros that AWS CloudFormation uses to process your template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
+Transform:
+- AWS::Serverless-2016-10-31
+
+Parameters:
+  TargetEnvironment:
+    Description: 'Examples can be dev, test or prod'
+    Type: 'String'
+
+Resources:
+
+  # SNS Topic used for publishing events as side-effects to Commands.     
+  ProjectTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Sub 'focusmark-${TargetEnvironment}-sns-project'
+      TopicName: !Sub 'focusmark-${TargetEnvironment}-sns-project'
+  
+  # API Gateway used by the Project API.
+  # Auth setup example from https://github.com/awslabs/serverless-application-model/blob/master/examples/2016-10-31/api_cognito_auth/template.yaml
+  ProjectApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref TargetEnvironment
+      Name: !Sub 'focusmark-${TargetEnvironment}-apigateway-project'
+      MethodSettings:
+        - LoggingLevel: 'INFO'
+          ResourcePath: '/'
+          MetricsEnabled: 'true'
+          DataTraceEnabled: 'true'
+          HttpMethod: '*'
+      Auth:
+        DefaultAuthorizer: ApiGetProjectAuthorizer
+        Authorizers:
+          ApiPostProjectAuthorizer:
+            UserPoolArn: {'Fn::ImportValue': !Sub 'focusmark-${TargetEnvironment}-userpool'}
+            Identity: 
+              Header: 'Authorization'
+            AuthorizationScopes:
+              - "app.focusmark.api.project/project.write"
+          ApiGetProjectAuthorizer:
+            UserPoolArn: {'Fn::ImportValue': !Sub 'focusmark-${TargetEnvironment}-userpool'}
+            Identity: 
+              Header: 'Authorization'
+            AuthorizationScopes:
+              - "app.focusmark.api.project/project.read"
+
+
+  # IAM Role used by the Lambda for handling HTTP POST requests that create projects.
+  projectSnsSubscriberFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: !Sub 'Allows querying from ${ProjectEventSourceTable} and producing a queryable view of the data in the ${ProjectTable} table'
+      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_sns_subscriber'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_sns_subscriber'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 'sns:Publish'
+                Resource: !Ref ProjectTopic
+              - Effect: Allow
+                Action: 
+                  - 'dynamodb:GetItem'
+                  - 'dynamodb:Query'
+                Resource: !GetAtt ProjectEventSourceTable.Arn
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:PutItem'
+                Resource: !GetAtt ProjectTable.Arn
+              - Effect: Allow
+                Action: 
+                  - 'xray:CreateGroup'
+                  - 'xray:CreateSamplingRule'
+                Resource: 
+                  - 'arn:aws:xray:*:*:group/*/*'
+                  - 'arn:aws:xray:*:*:sampling-rule/*'
+              - Effect: Allow
+                Action:
+                  - 'xray:PutTelemetryRecords'
+                  - 'xray:PutTraceSegments'
+                Resource: '*'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        
+  # IAM Role used by the Lambda for handling HTTP POST requests that create projects.
+  postItemFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: !Sub 'Allows inserting new records into the ${ProjectEventSourceTable} table'
+      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_post'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_post'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 'sns:Publish'
+                Resource: !Ref ProjectTopic
+              - Effect: Allow
+                Action: 
+                  - 'dynamodb:PutItem'
+                Resource: !GetAtt ProjectEventSourceTable.Arn
+              - Effect: Allow
+                Action: 
+                  - 'xray:CreateGroup'
+                  - 'xray:CreateSamplingRule'
+                Resource: 
+                  - 'arn:aws:xray:*:*:group/*/*'
+                  - 'arn:aws:xray:*:*:sampling-rule/*'
+              - Effect: Allow
+                Action:
+                  - 'xray:PutTelemetryRecords'
+                  - 'xray:PutTraceSegments'
+                Resource: '*'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        
+  # Project SNS subscriber within the Project API
+  projectSnsSubscriberFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_sns_subscriber'
+      Handler: src/handlers/sns-handler.Handler
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 10
+      Description: HTT POST handler for the /project API endpoint
+      Role: !GetAtt postItemFunctionRole.Arn
+      Environment:
+        Variables:
+          deployed_environment: $TargetEnvironment
+          dynamodb_projectTable: !Ref ProjectTable
+          dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
+          dynamodb_endpointUrl: ''
+          sns_project_topic: !Ref ProjectTopic
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Auth:
+              Authorizer: ApiPostProjectAuthorizer
+            Path: /
+            Method: POST
+            RestApiId:
+              Ref: ProjectApi
+
+  # Lambda for handling HTTP POST requests that create projects.
+  postItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_post'
+      Handler: src/handlers/post-item.postItemHandler
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 10
+      Description: HTT POST handler for the /project API endpoint
+      Role: !GetAtt postItemFunctionRole.Arn
+      Environment:
+        Variables:
+          deployed_environment: $TargetEnvironment
+          dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
+          dynamodb_endpointUrl: ''
+          sns_project_topic: !Ref ProjectTopic
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Auth:
+              Authorizer: ApiPostProjectAuthorizer
+            Path: /
+            Method: POST
+            RestApiId:
+              Ref: ProjectApi
+
+  # getAllItemsFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     Handler: src/handlers/get-all-items.getAllItemsHandler
+  #     Runtime: nodejs12.x
+  #     MemorySize: 128
+  #     Timeout: 100
+  #     Description: A simple example includes a HTTP get method to get all items from a DynamoDB table.
+  #     Policies:
+  #     Environment:
+  #       Variables:
+  #     Events:
+  #       Api:
+  #         Type: Api
+  #         Properties:
+  #           Path: /
+  #           Method: GET
+
+  # getByIdFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     Handler: src/handlers/get-by-id.getByIdHandler
+  #     Runtime: nodejs12.x
+  #     MemorySize: 128
+  #     Timeout: 100
+  #     Description: A simple example includes a HTTP get method to get one item by id from a DynamoDB table.
+  #     Policies:
+  #     Environment:
+  #       Variables:
+  #     Events:
+  #       Api:
+  #         Type: Api
+  #         Properties:
+  #           Path: /{id}
+  #           Method: GET
+            
+  # DynamoDB Table for storing the Project records
+  ProjectTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-project'
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: projectId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: projectId
+          KeyType: RANGE
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+        
+  # DynamoDB Table for storing the Project events
+  ProjectEventSourceTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-projectevents'
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: projectId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: projectId
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+
+Outputs:
+  ProjectApiEndPoint:
+    Description: "API Gateway endpoint URL for target environment stage"
+    Value: !Sub "https://${ProjectApi}.execute-api.${AWS::Region}.amazonaws.com/${TargetEnvironment}/"
+  ProjectCreatedTopic:
+    Description: "SNS Topic for publishing notifications relatled to Projects"
+    Value: !Ref ProjectTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-ProjectTopic"
+  ProjectApiId:
+    Description: "ID of the Project API resource"
+    Value: !Ref ProjectApi
+    Export:
+      Name: !Sub 'focusmark-${TargetEnvironment}-apigateway-project'

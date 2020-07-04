@@ -9,6 +9,7 @@ const Response = require('../shared/response');
 let commandParser = new CommandParser();
 let commandFactory = new CommandFactory();
     
+// Receives an HTTP POST with a project creation command. Produces a creation event and stores it in the event store, publishing to SNS when completed.
 exports.postItemHandler = async (event, context) => {
     if (event.httpMethod !== 'POST') {
         return new Response(404, null, `postMethod only accepts POST method, you tried: ${event.httpMethod} method.`);
