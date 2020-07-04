@@ -29,7 +29,7 @@ class Response {
             'Content-Type': 'application/json',
         };
         
-        if (createdLocation) {
+        if (statusCode == 202) {
             this.headers['Location'] = createdLocation;
         }
     }

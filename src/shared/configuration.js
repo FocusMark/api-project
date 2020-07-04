@@ -15,6 +15,7 @@ class Configuration {
         
         this.data = {
             dynamodb_projectTable: process.env.dynamodb_projectTable,
+            dynamodb_projectEventSourceTable: process.env.dynamodb_projectEventSourceTable,
             dynamodb_endpointUrl: process.env.dynamodb_endpointUrl
         };
         
