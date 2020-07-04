@@ -1,7 +1,7 @@
 # api-project
 Project RESTful services for FocusMark
-
-[![codebeat badge](https://codebeat.co/badges/09a38114-e0d9-4ebc-8e58-b654df741df2)](https://codebeat.co/projects/github-com-focusmark-api-project-feature-007-create-project)
+[![BCH compliance](https://bettercodehub.com/edge/badge/FocusMark/api-project?branch=development)](https://bettercodehub.com/)
+[![codebeat badge](https://codebeat.co/badges/b0cf6e04-ecfd-4e8a-b86a-6a4341a6460b)](https://codebeat.co/projects/github-com-focusmark-api-account-development)
 
 This repository holds the source code needed for the FocusMark Project REST API Endpoint. The Project resource allows for creating projects that hold children resources related to projects within FocusMark.
 

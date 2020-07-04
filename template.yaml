@@ -108,6 +108,7 @@ Resources:
         Variables:
           deployed_environment: $TargetEnvironment
           dynamodb_projectTable: !Ref ProjectTable
+          dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
           dynamodb_endpointUrl: ''
           sns_project_topic: !Ref ProjectTopic
       Events:
@@ -161,7 +162,7 @@ Resources:
   ProjectTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodåb-project'
+      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-project'
       AttributeDefinitions:
         - AttributeName: userId
           AttributeType: S

@@ -14,32 +14,32 @@ describe('Test constructor', function () {
     let defaultStatus = Status.PLANNING;
     
     it('should assign projectId to the model', () => {
-        let project = new ProjectModel(title, userId);
+        let project = new ProjectModel(userId, title);
         expect(project.projectId).to.exist;
     });
         
     it('should assign userId to the model', () => {
-        let project = new ProjectModel(title, userId);
+        let project = new ProjectModel(userId, title);
         project.userId.should.equal(userId);
     });
     
     it('should assign title to the model', () => {
-        let project = new ProjectModel(title, userId);
+        let project = new ProjectModel(userId, title);
         project.title.should.equal(title);
     });
     
     it('should assign createdAt to the model', () => {
-        let project = new ProjectModel(title, userId);
+        let project = new ProjectModel(userId, title);
         expect(project.createdAt).to.exist;
     });
     
     it('should assign updatedAt to the model', () => {
-        let project = new ProjectModel(title, userId);
+        let project = new ProjectModel(userId, title);
         expect(project.updatedAt).to.exist;
     });
     
     it('should assign default status to the model', () => {
-        let project = new ProjectModel(title, userId);
+        let project = new ProjectModel(userId, title);
         project.status.should.equal(defaultStatus);
     });
 });
@@ -50,7 +50,7 @@ describe('Test setTitle', function() {
     
     it('should change title when invoked', async () => {
         let newTitle = 'foobar';
-        let project = new ProjectModel(title, userId);
+        let project = new ProjectModel(userId, title);
         project.setTitle(newTitle);
         
         project.title.should.equal(newTitle);
@@ -58,7 +58,7 @@ describe('Test setTitle', function() {
     
     it('should change updatedAt when title is changed', async () => {
         let newTitle = 'foobar';
-        let project = new ProjectModel(title, userId);
+        let project = new ProjectModel(userId, title);
         let currentUpdatedAt = project.updatedAt;
 
         await sleep(50);
@@ -75,7 +75,7 @@ describe('Test setStatus', function() {
     let status = Status.PLANNING;
     
     it('should set status when invoked', async () => {
-        let project = new ProjectModel(title, userId);
+        let project = new ProjectModel(userId, title);
         project.setStatus(status);
 
         project.status.should.equal(status);
@@ -83,7 +83,7 @@ describe('Test setStatus', function() {
     
     it('should change updatedAt when status is changed', async () => {
         let newStatus = Status.ACTIVE;
-        let project = new ProjectModel(title, userId);
+        let project = new ProjectModel(userId, title);
         let currentUpdatedAt = project.updatedAt;
 
         await sleep(50);
@@ -98,7 +98,7 @@ describe('Test validate', function() {
     let userId = uuidv4();
     
     it('should fail when title is null', async () => {
-        let project = new ProjectModel(null, userId);
+        let project = new ProjectModel(userId, null);
         let validation = project.validate();
 
         expect(validation).to.exist;
@@ -106,7 +106,7 @@ describe('Test validate', function() {
     });
     
     it('should fail when title is empty', async () => {
-        let project = new ProjectModel("", userId);
+        let project = new ProjectModel(userId, "");
         let validation = project.validate();
 
         expect(validation).to.exist;
@@ -114,7 +114,7 @@ describe('Test validate', function() {
     });
     
     it('should fail when title is whitespace', async () => {
-        let project = new ProjectModel("   ", userId);
+        let project = new ProjectModel(userId, "   ");
         let validation = project.validate();
 
         expect(validation).to.exist;
@@ -122,7 +122,7 @@ describe('Test validate', function() {
     });
     
     it('should fail when status is null', async () => {
-        let project = new ProjectModel(title, userId);
+        let project = new ProjectModel(userId, title);
         project.setStatus(null);
         let validation = project.validate();
 
@@ -131,7 +131,7 @@ describe('Test validate', function() {
     });
     
     it('should fail when status is empty', async () => {
-        let project = new ProjectModel(title, userId);
+        let project = new ProjectModel(userId, title);
         project.setStatus("");
         let validation = project.validate();
 
@@ -140,7 +140,7 @@ describe('Test validate', function() {
     });
     
     it('should fail when status is whitespace', async () => {
-        let project = new ProjectModel(title, userId);
+        let project = new ProjectModel(userId, title);
         project.setStatus(".  ");
         let validation = project.validate();
 
@@ -149,7 +149,7 @@ describe('Test validate', function() {
     });
     
     it('should fail when status is not supported value', async () => {
-        let project = new ProjectModel(title, userId);
+        let project = new ProjectModel(userId, title);
         project.setStatus('foobar');
         let validation = project.validate();
 
