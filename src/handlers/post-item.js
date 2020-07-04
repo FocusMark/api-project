@@ -15,14 +15,16 @@ exports.postItemHandler = async (event, context) => {
     }
 
     let command;
-    // let segment = AWSXRay.getSegment();
-    // let appSegment = segment.addNewSubsegment('postItemHandler.command-parse');
+    let segment = AWSXRay.getSegment();
+    let commandParseSegment = segment.addNewSubsegment('postItemHandler.command-parse');
     
     try {
         let desiredCommand = commandParser.getCommandFromLambda(event);
         command = commandFactory.fromCommand(desiredCommand);
     } catch(err) {
         return new Response(404, {}, err.message);
+    } finally {
+        commandParseSegment.close();
     }
     
     // We only allow CREATE command types when you perform a POST.
@@ -31,12 +33,18 @@ exports.postItemHandler = async (event, context) => {
     }
     
     console.info('Executing the command');
+    let commandExecuteSegment = segment.addNewSubsegment('postItemHandler.command-execute');
+    let response;
+    
     try {
-        let response = await command.execute(event);
+        response = await command.execute(event);
         console.info(response);
-        return response;
     } catch(err) {
         console.info(err.message);
-        return new Response(400, null, 'Server failed to process request');
+        response = new Response(400, null, 'Server failed to process request');
+    } finally {
+        commandExecuteSegment.close();
     }
+    
+    return response;
 }
