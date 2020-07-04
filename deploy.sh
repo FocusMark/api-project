@@ -1,15 +1,9 @@
+npm install
+
+# Execute the SAM CLI Deploy command to upload the Lambdas to S3 and deploy them
 sam_stack_name=focusmark-"$deployed_environment"-sam-api-project
 sam_template_file='template.yaml'
-sam_s3_bucket_name=focusmark-$deployed_environment-sam-deployments
-
-cf_stack_name=focusmark-"$deployed_environment"-cf-apiProjectDomainMapping
-cf_template_file='domain-mapping.yaml'
-
-
-
-aws s3api create-bucket --acl private --bucket $sam_s3_bucket_name --region us-east-1
-
-npm install
+sam_s3_bucket_name=focusmark-$deployed_environment-s3-deployments
 
 sam deploy \
   --template-file $sam_template_file \
@@ -19,6 +13,11 @@ sam deploy \
   --s3-prefix focusmark-$deployed_environment-sam-api_project \
   --capabilities CAPABILITY_NAMED_IAM
   
+# Execute the CloudFormation template needed to map the API Gateway associated with the above SAM tempalte
+# to the existing custom domain deployed with the core infrastructure
+cf_stack_name=focusmark-"$deployed_environment"-cf-apiProjectDomainMapping
+cf_template_file='domain-mapping.yaml'
+
 aws cloudformation deploy \
   --template-file $cf_template_file \
   --stack-name $cf_stack_name \
