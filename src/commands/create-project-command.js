@@ -1,4 +1,5 @@
 const AWS = require('aws-sdk');
+const { v4: uuidv4 } = require('uuid');
 
 const Configuration = require('../shared/configuration');
 const JwtUser = require('../shared/jwt-user');
@@ -78,8 +79,8 @@ class CreateProjectCommand {
             Item: {
                 event: this.command,
                 eventTime: Date.now(),
-                userId: newProject.userId,
-                projectId: newProject.projectId,
+                userId_ProjectId: `${newProject.userId}_${newProject.projectId}`,
+                eventId: uuidv4(),
                 eventRecord: {
                     title: newProject.title,
                     path: newProject.path,

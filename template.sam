@@ -144,8 +144,7 @@ Resources:
   projectSnsSubscriberFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
-      CodeUri: 'src/handlers/'
-      Handler: sns-handler.handler
+      Handler: src/handlers/sns-handler.handler
       Runtime: nodejs12.x
       Role: !GetAtt projectSnsSubscriberFunctionRole.Arn
       FunctionName: !Sub "focusmark-${TargetEnvironment}-lambda-api_project_sns_subscriber"
@@ -265,14 +264,14 @@ Resources:
     Properties:
       TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-projectevents'
       AttributeDefinitions:
-        - AttributeName: userId
+        - AttributeName: userId_ProjectId
           AttributeType: S
-        - AttributeName: projectId
+        - AttributeName: eventId
           AttributeType: S
       KeySchema:
-        - AttributeName: userId
+        - AttributeName: userId_ProjectId
           KeyType: HASH
-        - AttributeName: projectId
+        - AttributeName: eventId
           KeyType: RANGE
       ProvisionedThroughput:
         ReadCapacityUnits: 2

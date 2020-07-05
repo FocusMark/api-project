@@ -9,5 +9,42 @@
                 "Authorization": "Bearer ciOiJSUzI1NiJ9.eyJzdWIiOiI1OTcyMTM1Ni03YmY5LTRiZGQtYjBlNi1kNTYzOTM2MzZjMGYiLCJ0b2tlbl91c2UiOiJhY2Nlc3MiLCJzY29wZSI6ImFwcC5mb2N1c21hcmsud29ya2Jvb2tcL3dvcmtib29rLnJlYWQgb3BlbmlkIGFwcC5mb2N1c21hcmsud29ya2Jvb2tcL3dvcmtib29rLndyaXRlIiwiYXV0aF90aW1lIjoxNTkwNDQ1MTMwLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAudXMtZWFzdC0xLmFtYXpvbmF3cy5jb21cL3VzLWVhc3QtMV91TENxcTloWUoiLCJleHAiOjE1OTA0NDg3MzAsImlhdCI6MTU5MDQ0NTEzMCwidmVyc2lvbiI6MiwianRpIjoiNGZkOGEyYzAtMmZkYS00YWEwLTk1OTItMWFhODI0ZWNmMWI3IiwiY2xpZW50X2lkIjoiMnYxODk5Y29tbnQ4amU3aGcybHNzMWoxMzQiLCJ1c2VybmFtZSI6ImZvb2JhciJ9.4eddoSQ5-p51e-7HCL0kFO6Ex-FpnDf4En2otSYf7--kv5JLz33Adh1V63WSwWYAvCexlGQ"
             }
         }
+    },
+    "projectSnsSubscriberFunction": {
+        "lambda": {
+            "Records": [
+                {
+                    "EventSource": "aws:sns",
+                    "EventVersion": "1.0",
+                    "EventSubscriptionArn": "arn:aws:sns:us-east-1:{{{accountId}}}:ExampleTopic",
+                    "Sns": {
+                        "Type": "Notification",
+                        "MessageId": "003aeede-7c3b-5f87-97eb-b9a497628965",
+                        "TopicArn": "arn:aws:sns:us-east-1:177960010925:focusmark-sullinger-sns-project",
+                        "Subject": "create-project",
+                        "Message": "{\"userId\":\"abba99ff-36f7-4e31-bb10-907fa0a77de3\",\"projectId\":\"31e82f3d-1bf8-4517-bb46-c09d1bb4d08b\",\"title\":\"Hello World\",\"updatedAt\":1593895192569,\"status\":\"Planning\",\"createdAt\":1593895192569,\"Path\":\"/Home\",\"color\":\"aaaaaa\",\"kind\":\"Kanban\",\"targetDate\":null,\"startDate\":null}",
+                        "Timestamp": "2020-07-04T20:39:53.485Z",
+                        "SignatureVersion": "1",
+                        "Signature": "YMNtWmH5XoYdwyTPLUqDBaDM3x2X4zD2Gvo7gUfi904DDzFnccwZshef/+Xi8usk3r7sJ6LtOFwOQMkTuNmZNYzRkY5jW5X4QaZnEFxldezQLDlwlxKuMgnWnWcDESd9Atg1AM9M8doEoZNJG+ZMJzhIRl5w5VZOZEX1L3qRJsQLNvsIcPW262qRvYgGMl+/Zz5HoMp6ivZShDGYeVKiapVQLPUhrxu7b7IpXoZSB34sddPlTg2pnxR9KSK6sFiEhQ9SWy8lfoGUVIZHJcnIqQDZYvoaP/7xXeEQ8zHrF6PKxxhE1zN7pUTxaWYE5XmlGEGqhhGbbXdR1+PmfqRYVw==",
+                        "SigningCertURL": "https://sns.us-east-1.amazonaws.com/SimpleNotificationService-a86cb10b4e1f29c941702d737128f7b6.pem",
+                        "UnsubscribeURL": "https://sns.us-east-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-east-1:177960010925:focusmark-sullinger-sns-project:c2cb2cca-c8bf-423b-9365-5679c0f9b300",
+                        "MessageAttributes": {
+                            "RecordOwner": {
+                                "Type": "String",
+                                "Value": "abba99ff-36f7-4e31-bb10-907fa0a77de3"
+                            },
+                            "Version": {
+                                "Type": "String",
+                                "Value": "2020-04-23"
+                            },
+                            "DomainCommand": {
+                                "Type": "String",
+                                "Value": "create-project"
+                            }
+                        }
+                    }
+                }
+            ]
+        }
     }
 }
