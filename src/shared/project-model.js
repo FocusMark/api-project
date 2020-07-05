@@ -27,7 +27,7 @@ class ProjectModel {
             this.path = '/';
         } else {
             if (path.startsWith('/')) {
-                this.Path = path;
+                this.path = path;
             } else {
                 this.path = `/${path}`;
             }
@@ -71,11 +71,6 @@ class ProjectModel {
             this.color = Math.floor(Math.random()*16777215).toString(16);
         }
         
-        this.updatedAt = Date.now();
-    }
-    
-    setPath(path) {
-        this.path = path;
         this.updatedAt = Date.now();
     }
     
