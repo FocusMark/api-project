@@ -12,14 +12,10 @@ class ProjectModel {
         
         this.setTitle(title);
         this.setStatus(Status.PLANNING);
-        
-        this.createdAt = Date.now();
-        this.updatedAt = Date.now();
     }
     
     setTitle(title) {
         this.title = title;
-        this.updatedAt = Date.now();
     }
     
     setPathOrAssignDefault(path) {
@@ -60,7 +56,6 @@ class ProjectModel {
     
     setStatus(status) {
         this.status = status;
-        this.updatedAt = Date.now();
     }
     
     setColorOrAssignDefault(color) {
@@ -70,8 +65,6 @@ class ProjectModel {
             // Generate random hex color
             this.color = Math.floor(Math.random()*16777215).toString(16);
         }
-        
-        this.updatedAt = Date.now();
     }
     
     setMethodologyOrAssignDefault(kind) {
@@ -101,6 +94,7 @@ class ProjectModel {
             title: this.createTitleValidator(),
             userId: this.createUserValidator(),
             status: this.createStatusValidator(),
+            kind: this.createMethodologyKindValidator(),
         }
     }
     
@@ -129,6 +123,24 @@ class ProjectModel {
             type: 'string',
             inclusion: { 
                 within: allowedStatus, 
+                message: "'%{value}' is not allowed"
+            }
+        }
+    }
+    
+    createMethodologyKindValidator() {
+        // Construct a list of all allowed Status from the object itself and constrain to that list.
+        let allowedKind = [];
+        for(const property in Methodologies) {
+            let value = Methodologies[property];
+            allowedKind.push(value);
+        }
+        
+        return {
+            presence: { allowEmpty: false },
+            type: 'string',
+            inclusion: { 
+                within: allowedKind, 
                 message: "'%{value}' is not allowed"
             }
         }

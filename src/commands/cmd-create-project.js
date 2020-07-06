@@ -7,6 +7,8 @@ const ProjectModel = require('../shared/project-model');
 const Response = require('../shared/response');
 const Methodologies = require('../shared/methodologies');
 const Status = require('../shared/status');
+const { EventFactory } = require('../event-factory');
+
 
 class CreateProjectCommand {
     
@@ -17,6 +19,7 @@ class CreateProjectCommand {
         this.configuration = new Configuration();
         this.dynamoDbClient = dynamoDbClient,
         this.sns = sns;
+        this.eventFactory = new EventFactory();
     }
     
     // /project endpoint
@@ -33,15 +36,14 @@ class CreateProjectCommand {
         }
         
         console.info(`Saving Project ${project.projectId} to the Event Store`);
-        let eventStoreResponse = await this.saveToEventStore(project);
-        if (eventStoreResponse.statusCode != 200) {
+        let newEvent = await this.saveToEventStore(project);
+        if (newEvent === null) {
             console.info(`Failed to save Project ${project.projectId} to the Event Store`);
-            console.info(eventStoreResponse.errors);
             return new Response(500, null, 'System unavailable');
         }
         
         console.info(`Publishing Project ${project.projectId} to SNS for subscribers.`);
-        return await this.publishWorkbook(project);
+        return await this.publishWorkbook(newEvent);
     }
     
     createProject(httpEvent) {
@@ -75,34 +77,21 @@ class CreateProjectCommand {
     async saveToEventStore(project) {
         try {
             console.info(`Creating Event Store parameters for project ${project.projectId} and Event Store Table ${this.configuration.data.dynamodb_projectEventSourceTable}`);
-            let dynamoDBParams = this.createDynamoDBParameters(project);
+            let newEvent = this.eventFactory.getProjectCreatedEvent(project)
+            let dynamoDBParams = this.createDynamoDBParameters(newEvent);
             await this.dynamoDbClient.put(dynamoDBParams).promise();
             
-            return new Response(200, project, null);
+            return newEvent;
         } catch(err) {
             console.info(err);
-            return new Response(400, null, err);
+            return null;
         }
     }
     
-    createDynamoDBParameters(newProject) {
+    createDynamoDBParameters(newEvent) {
         return {
             TableName: this.configuration.data.dynamodb_projectEventSourceTable,
-            Item: {
-                event: this.domainEvent,
-                eventTime: Date.now(),
-                userId_ProjectId: `${newProject.userId}_${newProject.projectId}`,
-                eventId: uuidv4(),
-                eventRecord: {
-                    title: newProject.title,
-                    path: newProject.path,
-                    color: newProject.color,
-                    kind: newProject.kind,
-                    status: newProject.status,
-                    startDate: newProject.startDate,
-                    targetDate: newProject.targetDate
-                },
-            }
+            Item: newEvent,
         };
     }
     
@@ -115,27 +104,27 @@ class CreateProjectCommand {
             DomainEvent: {
                 DataType: 'String',
                 StringValue: this.domainEvent,
-            },
-            RecordOwner: {
-                DataType: 'String',
-                StringValue: userId
             }
         };
     }
     
-    async publishWorkbook(newProject) {
-        console.info(`Creating publish parameters for Project ${newProject.projectId}`);
+    async publishWorkbook(newEvent) {
+        let payload = newEvent.payload;
+        console.info(`Creating publish parameters for Project ${payload.projectId}`);
+        
         let params = {
             Subject: this.domainEvent,
-            Message: JSON.stringify(newProject),
+            Message: JSON.stringify(newEvent),
             TopicArn: this.configuration.events.topic,
-            MessageAttributes: this.createPublishedMessageAttributes(newProject.userId),
+            MessageAttributes: this.createPublishedMessageAttributes(),
         };
         
+        
         try {
-            console.info(`Publishing Project ${newProject.projectId} to Topic ${params.TopicArn}`);
+            console.info(`Publishing Project ${payload.projectId} to Topic ${params.TopicArn}`);
             await this.sns.publish(params).promise();
-            return new Response(202, newProject.projectId, null, `/project/${newProject.projectId}`);
+            console.info(`Publish completed for Project ${payload.projectId}.`);
+            return new Response(202, payload.projectId, null, `/project/${payload.projectId}`);
         } catch(err) {
             console.error(err);
             return new Response(500, null, 'Failed to create the Project', null);

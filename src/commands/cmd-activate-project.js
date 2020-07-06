@@ -27,8 +27,6 @@ class ActivateProjectCommand {
         
         // TODO insert new event record
         
-        // TODO Update cmd-create-project so it inserts project-created as an event instead of create-project
-        
         // TODO Complete event-factory
         
         // TODO Publish via SNS
