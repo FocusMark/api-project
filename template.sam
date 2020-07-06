@@ -14,13 +14,44 @@ Parameters:
 
 Resources:
 
-  # SNS Topic used for publishing events as side-effects to Commands.     
-  ProjectTopic:
-    Type: AWS::SNS::Topic
+  # DynamoDB Table for storing the Project records
+  ProjectTable:
+    Type: AWS::DynamoDB::Table
     Properties:
-      DisplayName: !Sub 'focusmark-${TargetEnvironment}-sns-project'
-      TopicName: !Sub 'focusmark-${TargetEnvironment}-sns-project'
-  
+      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-project'
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: projectId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: projectId
+          KeyType: RANGE
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+        
+  # DynamoDB Table for storing the Project events
+  ProjectEventSourceTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-projectevents'
+      AttributeDefinitions:
+        - AttributeName: userId_ProjectId
+          AttributeType: S
+        - AttributeName: eventId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId_ProjectId
+          KeyType: HASH
+        - AttributeName: eventId
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+
   # API Gateway used by the Project API.
   # Auth setup example from https://github.com/awslabs/serverless-application-model/blob/master/examples/2016-10-31/api_cognito_auth/template.yaml
   ProjectApi:
@@ -49,116 +80,6 @@ Resources:
               Header: 'Authorization'
             AuthorizationScopes:
               - "app.focusmark.api.project/project.read"
-
-
-  # IAM Role used by the Lambda for handling HTTP POST requests that create projects.
-  projectSnsSubscriberFunctionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      Description: !Sub 'Allows querying from ${ProjectEventSourceTable} and producing a queryable view of the data in the ${ProjectTable} table'
-      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_sns_subscriber'
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-              - lambda.amazonaws.com
-            Action:
-              - 'sts:AssumeRole'
-      Policies:
-        - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_sns_subscriber'
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action: 'sns:Publish'
-                Resource: !Ref ProjectTopic
-              - Effect: Allow
-                Action: 
-                  - 'dynamodb:GetItem'
-                  - 'dynamodb:Query'
-                Resource: !GetAtt ProjectEventSourceTable.Arn
-              - Effect: Allow
-                Action:
-                  - 'dynamodb:PutItem'
-                Resource: !GetAtt ProjectTable.Arn
-              - Effect: Allow
-                Action: 
-                  - 'xray:CreateGroup'
-                  - 'xray:CreateSamplingRule'
-                Resource: 
-                  - 'arn:aws:xray:*:*:group/*/*'
-                  - 'arn:aws:xray:*:*:sampling-rule/*'
-              - Effect: Allow
-                Action:
-                  - 'xray:PutTelemetryRecords'
-                  - 'xray:PutTraceSegments'
-                Resource: '*'
-      ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
-        
-  # IAM Role used by the Lambda for handling HTTP POST requests that create projects.
-  postItemFunctionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      Description: !Sub 'Allows inserting new records into the ${ProjectEventSourceTable} table'
-      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_post'
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-              - lambda.amazonaws.com
-            Action:
-              - 'sts:AssumeRole'
-      Policies:
-        - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_post'
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action: 'sns:Publish'
-                Resource: !Ref ProjectTopic
-              - Effect: Allow
-                Action: 
-                  - 'dynamodb:PutItem'
-                Resource: !GetAtt ProjectEventSourceTable.Arn
-              - Effect: Allow
-                Action: 
-                  - 'xray:CreateGroup'
-                  - 'xray:CreateSamplingRule'
-                Resource: 
-                  - 'arn:aws:xray:*:*:group/*/*'
-                  - 'arn:aws:xray:*:*:sampling-rule/*'
-              - Effect: Allow
-                Action:
-                  - 'xray:PutTelemetryRecords'
-                  - 'xray:PutTraceSegments'
-                Resource: '*'
-      ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
-        
-  # Project SNS subscriber within the Project API
-  projectSnsSubscriberFunction:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: src/handlers/sns-handler.handler
-      Runtime: nodejs12.x
-      Role: !GetAtt projectSnsSubscriberFunctionRole.Arn
-      FunctionName: !Sub "focusmark-${TargetEnvironment}-lambda-api_project_sns_subscriber"
-      Description: 'Consumes Project SNS events from an SNS Topic and stores it in a datastore.'
-      Environment:
-        Variables:
-          deployed_environment: !Ref TargetEnvironment
-          dynamodb_projectTable: !Ref ProjectTable
-          dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
-          dynamodb_endpointUrl: ''
-          sns_project_topic: !Ref ProjectTopic
-      MemorySize: 128
-      Timeout: 900
-      Tracing: Active
 
   # Lambda for handling HTTP POST requests that create projects.
   postItemFunction:
@@ -223,6 +144,33 @@ Resources:
   #         Properties:
   #           Path: /{id}
   #           Method: GET
+  
+  # SNS Topic used for publishing events as side-effects to Commands.     
+  ProjectTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Sub 'focusmark-${TargetEnvironment}-sns-project'
+      TopicName: !Sub 'focusmark-${TargetEnvironment}-sns-project'
+        
+  # Project SNS subscriber within the Project API
+  projectSnsSubscriberFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: src/handlers/sns-handler.handler
+      Runtime: nodejs12.x
+      Role: !GetAtt projectSnsSubscriberFunctionRole.Arn
+      FunctionName: !Sub "focusmark-${TargetEnvironment}-lambda-api_project_sns_subscriber"
+      Description: 'Consumes Project SNS events from an SNS Topic and stores it in a datastore.'
+      Environment:
+        Variables:
+          deployed_environment: !Ref TargetEnvironment
+          dynamodb_projectTable: !Ref ProjectTable
+          dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
+          dynamodb_endpointUrl: ''
+          sns_project_topic: !Ref ProjectTopic
+      MemorySize: 128
+      Timeout: 900
+      Tracing: Active
             
   ProjectTopicLambdaSubscription:
     Type: AWS::SNS::Subscription
@@ -238,44 +186,91 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: sns.amazonaws.com
       SourceArn: !Ref ProjectTopic
-            
-  # DynamoDB Table for storing the Project records
-  ProjectTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-project'
-      AttributeDefinitions:
-        - AttributeName: userId
-          AttributeType: S
-        - AttributeName: projectId
-          AttributeType: S
-      KeySchema:
-        - AttributeName: userId
-          KeyType: HASH
-        - AttributeName: projectId
-          KeyType: RANGE
-      ProvisionedThroughput: 
-        ReadCapacityUnits: 2
-        WriteCapacityUnits: 2
         
-  # DynamoDB Table for storing the Project events
-  ProjectEventSourceTable:
-    Type: AWS::DynamoDB::Table
+  # IAM Role used by the Lambda for handling HTTP POST requests that create projects.
+  projectSnsSubscriberFunctionRole:
+    Type: AWS::IAM::Role
     Properties:
-      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-projectevents'
-      AttributeDefinitions:
-        - AttributeName: userId_ProjectId
-          AttributeType: S
-        - AttributeName: eventId
-          AttributeType: S
-      KeySchema:
-        - AttributeName: userId_ProjectId
-          KeyType: HASH
-        - AttributeName: eventId
-          KeyType: RANGE
-      ProvisionedThroughput:
-        ReadCapacityUnits: 2
-        WriteCapacityUnits: 2
+      Description: !Sub 'Allows querying from ${ProjectEventSourceTable} and producing a queryable view of the data in the ${ProjectTable} table'
+      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_sns_subscriber'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_sns_subscriber'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 'dynamodb:Query'
+                Resource: !GetAtt ProjectEventSourceTable.Arn
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:PutItem'
+                Resource: !GetAtt ProjectTable.Arn
+              - Effect: Allow
+                Action: 
+                  - 'xray:CreateGroup'
+                  - 'xray:CreateSamplingRule'
+                Resource: 
+                  - 'arn:aws:xray:*:*:group/*/*'
+                  - 'arn:aws:xray:*:*:sampling-rule/*'
+              - Effect: Allow
+                Action:
+                  - 'xray:PutTelemetryRecords'
+                  - 'xray:PutTraceSegments'
+                Resource: '*'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        
+  # IAM Role used by the Lambda for handling HTTP POST requests that create projects.
+  postItemFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: !Sub 'Allows inserting new records into the ${ProjectEventSourceTable} table'
+      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_post'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_post'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 'sns:Publish'
+                Resource: !Ref ProjectTopic
+              - Effect: Allow
+                Action: 
+                  - 'dynamodb:PutItem'
+                Resource: !GetAtt ProjectEventSourceTable.Arn
+              - Effect: Allow
+                Action: 
+                  - 'xray:CreateGroup'
+                  - 'xray:CreateSamplingRule'
+                Resource: 
+                  - 'arn:aws:xray:*:*:group/*/*'
+                  - 'arn:aws:xray:*:*:sampling-rule/*'
+              - Effect: Allow
+                Action:
+                  - 'xray:PutTelemetryRecords'
+                  - 'xray:PutTraceSegments'
+                Resource: '*'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
 
 Outputs:
   ProjectApiEndPoint:
