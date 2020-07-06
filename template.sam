@@ -151,7 +151,7 @@ Resources:
       Description: 'Consumes Project SNS events from an SNS Topic and stores it in a datastore.'
       Environment:
         Variables:
-          deployed_environment: $TargetEnvironment
+          deployed_environment: !Ref TargetEnvironment
           dynamodb_projectTable: !Ref ProjectTable
           dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
           dynamodb_endpointUrl: ''
@@ -173,7 +173,7 @@ Resources:
       Role: !GetAtt postItemFunctionRole.Arn
       Environment:
         Variables:
-          deployed_environment: $TargetEnvironment
+          deployed_environment: !Ref TargetEnvironment
           dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
           dynamodb_endpointUrl: ''
           sns_project_topic: !Ref ProjectTopic
