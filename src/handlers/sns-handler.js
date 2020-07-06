@@ -92,7 +92,8 @@ function createProjectTableParameters(project) {
             startDate: project.startDate,
             targetDate: project.targetDate,
             projectId: project.projectId,
-            userId: project.userId
+            userId: project.userId,
+            updatedAt: Date.now(),
         }
     };
 }
