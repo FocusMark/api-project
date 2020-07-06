@@ -1,30 +1,33 @@
-// Create clients and set shared const values outside of the handler.
+const Configuration = require('../shared/configuration');
+const Response = require('../shared/response');
+const JwtUser = require('../shared/jwt-user');
 
-// Get the DynamoDB table name from environment variables
-const tableName = process.env.SAMPLE_TABLE;
+let AWSXRay = require('aws-xray-sdk');
+let AWS = AWSXRay.captureAWS(require('aws-sdk'));
 
-// Create a DocumentClient that represents the query to add an item
-const dynamodb = require('aws-sdk/clients/dynamodb');
-const docClient = new dynamodb.DocumentClient();
+let dynamoDbClient = new AWS.DynamoDB.DocumentClient();
+let configuration = new Configuration();
 
-/**
- * A simple example includes a HTTP get method to get all items from a DynamoDB table.
- */
 exports.getAllItemsHandler = async (event) => {
     if (event.httpMethod !== 'GET') {
-        throw new Error(`getAllItems only accept GET method, you tried: ${event.httpMethod}`);
+        throw new Error(`This endpoint only accepts GET method, you tried: ${event.httpMethod}`);
     }
-    // All log statements are written to CloudWatch
-    console.info('received:', event);
-
-    // get all items from the table (only first 1MB data, you can use `LastEvaluatedKey` to get the rest of data)
-    // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#scan-property
-    // https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Scan.html
+    console.info(configuration);
+    let user = new JwtUser(event);
     var params = {
-        TableName : tableName
+        TableName : configuration.data.dynamodb_projectTable,
+        ExpressionAttributeValues: {
+            ':uid': user.userId,
+        },
+        KeyConditionExpression: 'userId = :uid'
     };
-    const data = await docClient.scan(params).promise();
+    
+    const data = await dynamoDbClient.query(params).promise();
     const items = data.Items;
+    
+    // No reason to include the userId in the response. It exists in the table to query by but it should not go with the data.
+    // Client apps can use their id_token or access_token to get this if needed.
+    items.forEach(item => delete item.userId);
 
     const response = {
         statusCode: 200,
