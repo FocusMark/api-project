@@ -4,11 +4,13 @@ const { DomainEvents, EventFactory } = require('./event-factory');
 const Configuration = require('./shared/configuration');
 const CreateProjectCommand = require('./commands/cmd-create-project');
 const ActivateProjectCommand = require('./commands/cmd-activate-project');
+const MoveProjectCommand = require('./commands/cmd-move-project');
 
 /** Represents a valid and supported set of Domain commands. **/
 const DomainCommands = {
     CREATE_PROJECT: 'create-project',
     ACTIVATE_PROJECT: 'activate-project',
+    MOVE_PROJECT: 'move-project',
 };
 
 const CommandTypes = {
@@ -47,6 +49,9 @@ class CommandFactory {
             case DomainCommands.ACTIVATE_PROJECT:
                 console.info(`Command is identified as the ${DomainCommands.ACTIVATE_PROJECT} command. Instantiating the associated Command.`);
                 return this.getActivateProjectCommand(command, DomainEvents.PROJECT_ACTIVATED, CommandTypes.UPDATE);
+            case DomainCommands.MOVE_PROJECT:
+                console.info(`Command is identified as the ${DomainCommands.MOVE_PROJECT} command. Instantiating the associated Command.`);
+                return this.getMoveProjectCommand(command, DomainEvents.PROJECT_MOVED, CommandTypes.UPDATE);
         }
     }
     
@@ -60,6 +65,12 @@ class CommandFactory {
         let dynamoDbClient = new AWS.DynamoDB.DocumentClient();
         let sns = new AWS.SNS();
         return new ActivateProjectCommand(command, commandType, domainEvent, dynamoDbClient, sns);
+    }
+    
+    getMoveProjectCommand(command, domainEvent, commandType) {
+        let dynamoDbClient = new AWS.DynamoDB.DocumentClient();
+        let sns = new AWS.SNS();
+        return new MoveProjectCommand(command, commandType, domainEvent, dynamoDbClient, sns);
     }
 }
 

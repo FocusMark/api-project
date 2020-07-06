@@ -88,7 +88,7 @@ Resources:
       FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_post'
       Handler: src/handlers/post-item.postItemHandler
       Runtime: nodejs12.x
-      MemorySize: 128
+      MemorySize: 256
       Timeout: 10
       Description: HTT POST handler for the /project API endpoint
       Role: !GetAtt postItemFunctionRole.Arn
@@ -116,7 +116,7 @@ Resources:
       FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_put'
       Handler: src/handlers/put-item.putItemHandler
       Runtime: nodejs12.x
-      MemorySize: 128
+      MemorySize: 256
       Timeout: 10
       Description: HTTP PUT handler for the /project/{projectId} API endpoint
       Role: !GetAtt putItemFunctionRole.Arn
@@ -196,7 +196,7 @@ Resources:
           dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
           dynamodb_endpointUrl: ''
           sns_project_topic: !Ref ProjectTopic
-      MemorySize: 128
+      MemorySize: 256
       Timeout: 900
       Tracing: Active
             

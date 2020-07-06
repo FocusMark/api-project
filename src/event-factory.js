@@ -4,7 +4,8 @@ const ProjectDomainEvent = require('./project-domain-event');
 
 const DomainEvents = {
     PROJECT_CREATED: 'project-created',
-    PROJECT_ACTIVATED: 'project-activated'
+    PROJECT_ACTIVATED: 'project-activated',
+    PROJECT_MOVED: 'project-moved'
 };
 
 class EventFactory {
@@ -13,8 +14,11 @@ class EventFactory {
     }
     
     getProjectActivatedEvent(eventData) {
-        console.info(eventData);
         return new ProjectDomainEvent(eventData, DomainEvents.PROJECT_ACTIVATED);
+    }
+    
+    getProjectMovedEvent(eventData) {
+        return new ProjectDomainEvent(eventData, DomainEvents.PROJECT_MOVED);
     }
 }
 

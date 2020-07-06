@@ -157,6 +157,10 @@ function applyEventsToProject(emptyProject, events) {
             default:
                 console.info(`Unknown domain event of ${currentEvent.event} found and skipped.`);
                 break;
+            case DomainEvents.PROJECT_MOVED:
+                console.info(`Applying #{DomainEvents.PROJECT_MOVED} event to the Project ${emptyProject.projectId}`);
+                applyMoveProjectCommand(emptyProject, currentEvent.payload);
+                break;
         }
     })
 }
@@ -173,4 +177,8 @@ function applyCreateCommand(project, event) {
 
 function applyActivatecommand(project, event) {
     project.setStatus(event.status);
+}
+
+function applyMoveProjectCommand(project, event) {
+    project.setPathOrAssignDefault(event.path);
 }
