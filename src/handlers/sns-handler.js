@@ -163,13 +163,13 @@ function applyEventsToProject(emptyProject, events) {
 function applyCreateCommand(project, event) {
     project.setTitle(event.title);
     project.setPathOrAssignDefault(event.path);
-    project.setTargetDateOrAssignDefault(project.targetDate);
-    project.setStartDateOrAssignDefault(project.startDate);
-    project.setStatus(project.status);
-    project.setColorOrAssignDefault(project.color);
-    project.setMethodologyOrAssignDefault(project.kind);
+    project.setTargetDateOrAssignDefault(event.targetDate);
+    project.setStartDateOrAssignDefault(event.startDate);
+    project.setStatus(event.status);
+    project.setColorOrAssignDefault(event.color);
+    project.setMethodologyOrAssignDefault(event.kind);
 }
 
 function applyActivatecommand(project, event) {
-    // TODO:
+    project.setStatus(event.status);
 }

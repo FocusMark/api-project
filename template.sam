@@ -119,7 +119,7 @@ Resources:
       MemorySize: 128
       Timeout: 10
       Description: HTTP PUT handler for the /project/{projectId} API endpoint
-      Role: !GetAtt postItemFunctionRole.Arn
+      Role: !GetAtt putItemFunctionRole.Arn
       Environment:
         Variables:
           deployed_environment: !Ref TargetEnvironment
@@ -326,6 +326,7 @@ Resources:
               - Effect: Allow
                 Action: 
                   - 'dynamodb:PutItem'
+                  - 'dynamodb:Query'
                 Resource: !GetAtt ProjectEventSourceTable.Arn
               - Effect: Allow
                 Action: 

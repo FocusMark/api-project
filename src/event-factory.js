@@ -12,7 +12,8 @@ class EventFactory {
         return new ProjectDomainEvent(newProject, DomainEvents.PROJECT_CREATED);
     }
     
-    getProjectDueDateScheduledEvent(eventData) {
+    getProjectActivatedEvent(eventData) {
+        console.info(eventData);
         return new ProjectDomainEvent(eventData, DomainEvents.PROJECT_ACTIVATED);
     }
 }

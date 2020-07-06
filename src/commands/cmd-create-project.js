@@ -43,7 +43,7 @@ class CreateProjectCommand {
         }
         
         console.info(`Publishing Project ${project.projectId} to SNS for subscribers.`);
-        return await this.publishWorkbook(newEvent);
+        return await this.publishProject(newEvent);
     }
     
     createProject(httpEvent) {
@@ -108,7 +108,7 @@ class CreateProjectCommand {
         };
     }
     
-    async publishWorkbook(newEvent) {
+    async publishProject(newEvent) {
         let payload = newEvent.payload;
         console.info(`Creating publish parameters for Project ${payload.projectId}`);
         
