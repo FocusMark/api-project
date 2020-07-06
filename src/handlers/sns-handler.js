@@ -136,6 +136,7 @@ function aggregateEvents(events, userId, projectId) {
 	finalModel.projectId = projectId;
 	applyEventsToProject(finalModel, sortedEvents);
 	
+	// TODO: Should validate model but not sure on how best to handle failed validation resulting in events not reflected in the viewmodel datastore.
 	return finalModel;
 }
 
@@ -147,6 +148,10 @@ function applyEventsToProject(emptyProject, events) {
             case DomainEvents.PROJECT_CREATED:
                 console.info(`Applying ${DomainEvents.PROJECT_CREATED} event to Project ${emptyProject.projectId}`);
                 applyCreateCommand(emptyProject, currentEvent.payload);
+                break;
+            case DomainEvents.PROJECT_ACTIVATED:
+                console.info(`Applying ${DomainEvents.PROJECT_ACTIVATED} event to Project ${emptyProject.projectId}`);
+                applyActivatecommand(emptyProject, currentEvent.payload);
                 break;
             default:
                 console.info(`Unknown domain event of ${currentEvent.event} found and skipped.`);
@@ -163,4 +168,8 @@ function applyCreateCommand(project, event) {
     project.setStatus(project.status);
     project.setColorOrAssignDefault(project.color);
     project.setMethodologyOrAssignDefault(project.kind);
+}
+
+function applyActivatecommand(project, event) {
+    // TODO:
 }
