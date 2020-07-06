@@ -18,6 +18,7 @@ class CreateProjectCommand {
         this.sns = sns;
     }
     
+    // /project endpoint
     async execute(httpEvent) {
         console.info('Creating project from HTTP request');
         let project = this.createProject(httpEvent);

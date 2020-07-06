@@ -37,9 +37,10 @@ exports.putItemHandler = async (event, context) => {
     let response;
     
     try {
-        
+        response = await command.execute(event);
     } catch(err) {
-        
+        console.info(err.message);
+        response = new Response(400, null, 'Server failed to process request');
     }
     
     commandExecuteSegment.close();

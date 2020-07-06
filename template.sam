@@ -108,6 +108,34 @@ Resources:
             Method: POST
             RestApiId:
               Ref: ProjectApi
+              
+  # Lambda for handling HTTP POST requests that create projects.
+  ActivateProjectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_put_activateproject'
+      Handler: src/handlers/put-item.putItemHandler
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 10
+      Description: HTT POSTPUT handler for the /project/{projectId} API endpoint
+      Role: !GetAtt postItemFunctionRole.Arn
+      Environment:
+        Variables:
+          deployed_environment: !Ref TargetEnvironment
+          dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
+          dynamodb_endpointUrl: ''
+          sns_project_topic: !Ref ProjectTopic
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Auth:
+              Authorizer: ApiPostProjectAuthorizer
+            Path: /{projectId}
+            Method: PUT
+            RestApiId:
+              Ref: ProjectApi
 
   # getAllItemsFunction:
   #   Type: AWS::Serverless::Function

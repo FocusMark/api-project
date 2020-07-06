@@ -38,7 +38,6 @@ exports.postItemHandler = async (event, context) => {
     
     try {
         response = await command.execute(event);
-        console.info(response);
     } catch(err) {
         console.info(err.message);
         response = new Response(400, null, 'Server failed to process request');
