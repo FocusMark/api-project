@@ -141,10 +141,11 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/get-all-items.getAllItemsHandler
+      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_getallitems'
       Runtime: nodejs12.x
       MemorySize: 256
       Timeout: 100
-      Description: A simple example includes a HTTP get method to get all items from a DynamoDB table.
+      Description: HTTP GET handler for the /project API endpoint to retrieve all Projects for a user.
       Role: !GetAtt getAllItemsFunctionRole.Arn
       Environment:
         Variables:

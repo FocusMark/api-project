@@ -2,7 +2,9 @@ const Configuration = require('../shared/configuration');
 const Response = require('../shared/response');
 const JwtUser = require('../shared/jwt-user');
 
-const AWS = require('aws-sdk');
+let AWSXRay = require('aws-xray-sdk');
+let AWS = AWSXRay.captureAWS(require('aws-sdk'));
+
 let dynamoDbClient = new AWS.DynamoDB.DocumentClient();
 let configuration = new Configuration();
 
