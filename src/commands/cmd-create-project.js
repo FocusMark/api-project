@@ -10,9 +10,10 @@ const Status = require('../shared/status');
 
 class CreateProjectCommand {
     
-    constructor(command, type, dynamoDbClient, sns) {
+    constructor(command, commandType, domainEvent, dynamoDbClient, sns) {
+        this.domainEvent = domainEvent;
         this.command = command;
-        this.type = type;
+        this.commandType = commandType;
         this.configuration = new Configuration();
         this.dynamoDbClient = dynamoDbClient,
         this.sns = sns;
@@ -88,7 +89,7 @@ class CreateProjectCommand {
         return {
             TableName: this.configuration.data.dynamodb_projectEventSourceTable,
             Item: {
-                event: this.command,
+                event: this.domainEvent,
                 eventTime: Date.now(),
                 userId_ProjectId: `${newProject.userId}_${newProject.projectId}`,
                 eventId: uuidv4(),
@@ -99,9 +100,7 @@ class CreateProjectCommand {
                     kind: newProject.kind,
                     status: newProject.status,
                     startDate: newProject.startDate,
-                    targetDate: newProject.targetDate,
-                    createdAt: newProject.createdAt,
-                    updatedAt: newProject.updatedAt,
+                    targetDate: newProject.targetDate
                 },
             }
         };
@@ -113,9 +112,9 @@ class CreateProjectCommand {
                 DataType: 'String',
                 StringValue: '2020-04-23',
             },
-            DomainCommand: {
+            DomainEvent: {
                 DataType: 'String',
-                StringValue: this.command,
+                StringValue: this.domainEvent,
             },
             RecordOwner: {
                 DataType: 'String',
@@ -127,7 +126,7 @@ class CreateProjectCommand {
     async publishWorkbook(newProject) {
         console.info(`Creating publish parameters for Project ${newProject.projectId}`);
         let params = {
-            Subject: this.command,
+            Subject: this.domainEvent,
             Message: JSON.stringify(newProject),
             TopicArn: this.configuration.events.topic,
             MessageAttributes: this.createPublishedMessageAttributes(newProject.userId),

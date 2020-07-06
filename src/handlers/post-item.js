@@ -1,8 +1,8 @@
 let AWSXRay = require('aws-xray-sdk');
 let AWS = AWSXRay.captureAWS(require('aws-sdk'));
 
-const { CommandFactory, CommandTypes } = require('../commands/command-factory');
-const { CommandParser } = require('../commands/command-parser');
+const { CommandFactory, CommandTypes } = require('../command-factory');
+const { CommandParser } = require('../command-parser');
 const Response = require('../shared/response');
 
 let commandParser = new CommandParser();
@@ -28,7 +28,7 @@ exports.postItemHandler = async (event, context) => {
     }
     
     // We only allow CREATE command types when you perform a POST.
-    if (command.type !== CommandTypes.CREATE) {
+    if (command.commandType !== CommandTypes.CREATE) {
         return new Response(404, null, `The '${command.command}' command can not be used with HTTP POST.`);
     }
     

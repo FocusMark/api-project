@@ -7,9 +7,10 @@ const Status = require('../shared/status');
 
 // /project/{projectId} endpoint
 class ActivateProjectCommand {
-    constructor(command, type, dynamoDbClient, sns) {
+    constructor(command, commandType, domainEvent, dynamoDbClient, sns) {
+        this.domainEvent = domainEvent;
         this.command = command;
-        this.type = type;
+        this.commandType = commandType;
         this.configuration = new Configuration();
         this.dynamoDbClient = dynamoDbClient,
         this.sns = sns;

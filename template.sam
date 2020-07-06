@@ -110,15 +110,15 @@ Resources:
               Ref: ProjectApi
               
   # Lambda for handling HTTP POST requests that create projects.
-  ActivateProjectFunction:
+  putItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_put_activateproject'
+      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_put'
       Handler: src/handlers/put-item.putItemHandler
       Runtime: nodejs12.x
       MemorySize: 128
       Timeout: 10
-      Description: HTT POSTPUT handler for the /project/{projectId} API endpoint
+      Description: HTTP PUT handler for the /project/{projectId} API endpoint
       Role: !GetAtt postItemFunctionRole.Arn
       Environment:
         Variables:
@@ -275,6 +275,48 @@ Resources:
               - 'sts:AssumeRole'
       Policies:
         - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_post'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 'sns:Publish'
+                Resource: !Ref ProjectTopic
+              - Effect: Allow
+                Action: 
+                  - 'dynamodb:PutItem'
+                Resource: !GetAtt ProjectEventSourceTable.Arn
+              - Effect: Allow
+                Action: 
+                  - 'xray:CreateGroup'
+                  - 'xray:CreateSamplingRule'
+                Resource: 
+                  - 'arn:aws:xray:*:*:group/*/*'
+                  - 'arn:aws:xray:*:*:sampling-rule/*'
+              - Effect: Allow
+                Action:
+                  - 'xray:PutTelemetryRecords'
+                  - 'xray:PutTraceSegments'
+                Resource: '*'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        
+  # IAM Role used by the Lambda for handling HTTP POST requests that create projects.
+  putItemFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: !Sub 'Allows inserting new records into the ${ProjectEventSourceTable} table that represent updates to a Project'
+      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_put'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_put'
           PolicyDocument:
             Version: 2012-10-17
             Statement:

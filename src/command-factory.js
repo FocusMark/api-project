@@ -1,8 +1,9 @@
-const Configuration = require('../shared/configuration');
-const CreateProjectCommand = require('../commands/cmd-create-project');
-const ActivateProjectCommand = require('../commands/cmd-activate-project');
-
 const AWS = require('aws-sdk');
+
+const { DomainEvents, EventFactory } = require('./event-factory');
+const Configuration = require('./shared/configuration');
+const CreateProjectCommand = require('./commands/cmd-create-project');
+const ActivateProjectCommand = require('./commands/cmd-activate-project');
 
 /** Represents a valid and supported set of Domain commands. **/
 const DomainCommands = {
@@ -42,23 +43,23 @@ class CommandFactory {
             // Make sure that if additional commands are added that the command-factory.test.js is updated.
             case DomainCommands.CREATE_PROJECT:
                 console.info(`Command is identified as the ${DomainCommands.CREATE_PROJECT} command. Instantiating the associated Command.`);
-                return this.getCreateProjectCommand(command, CommandTypes.CREATE);
+                return this.getCreateProjectCommand(command, DomainEvents.PROJECT_CREATED, CommandTypes.CREATE);
             case DomainCommands.ACTIVATE_PROJECT:
                 console.info(`Command is identified as the ${DomainCommands.ACTIVATE_PROJECT} command. Instantiating the associated Command.`);
-                return this.getActivateProjectCommand(command, CommandTypes.UPDATE);
+                return this.getActivateProjectCommand(command, DomainEvents.PROJECT_ACTIVATED, CommandTypes.UPDATE);
         }
     }
     
-    getCreateProjectCommand(command, type) {
+    getCreateProjectCommand(command, domainEvent, commandType) {
         let dynamoDbClient = new AWS.DynamoDB.DocumentClient();
         let sns = new AWS.SNS();
-        return new CreateProjectCommand(command, type, dynamoDbClient, sns);
+        return new CreateProjectCommand(command, commandType, domainEvent, dynamoDbClient, sns);
     }
     
-    getActivateProjectCommand(command, type) {
+    getActivateProjectCommand(command, domainEvent, commandType) {
         let dynamoDbClient = new AWS.DynamoDB.DocumentClient();
         let sns = new AWS.SNS();
-        return new ActivateProjectCommand(command, type, dynamoDbClient, sns);
+        return new ActivateProjectCommand(command, commandType, domainEvent, dynamoDbClient, sns);
     }
 }
 

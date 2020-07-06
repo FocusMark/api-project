@@ -1,4 +1,5 @@
-const Response = require('../shared/response');
+const Response = require('./shared/response');
+
 const CommandParameterKey = 'domain-command';
 
 class CommandParser {
@@ -28,12 +29,13 @@ class CommandParser {
         let valueParts = headerValue.split(';')
             .filter(element => element.includes(`${CommandParameterKey}=`));
         
-        console.info(`${valueParts} discovered.`);
         if (valueParts.length === 0) {
             throw Error(`${CommandParameterKey} parameter is required on Content-Type`);
         }
         
-        return valueParts[0].trim();
+        let commandPart = valueParts[0].trim();
+        console.info(`${commandPart} discovered.`);
+        return commandPart;
     }
     
     getHeaderValue(event) {

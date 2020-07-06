@@ -1,18 +1,25 @@
+const { v4: uuidv4 } = require('uuid');
+
 const DomainEvents = {
     PROJECT_CREATED: 'project-created',
     PROJECT_DUEDATE_SCHEDULED: 'project-duedate-scheduled'
 };
 
 class EventFactory {
-    getProjectCreatedEvent(projectId, userId, projectTitle, projectPath) {
+    getProjectCreatedEvent(newProject) {
         return {
             event: DomainEvents.PROJECT_CREATED,
-            timestamp: Date.now(),
+            eventTime: Date.now(),
+            userId_ProjectId: `${newProject.userId}_${newProject.projectId}`,
+            eventId: uuidv4(),
             payload: {
-                userId: userId,
-                projectId: projectId,
-                title: projectTitle,
-                path: projectPath,
+                title: newProject.title,
+                path: newProject.path,
+                color: newProject.color,
+                kind: newProject.kind,
+                status: newProject.status,
+                startDate: newProject.startDate,
+                targetDate: newProject.targetDate
             },
         };
     }
@@ -29,3 +36,5 @@ class EventFactory {
         };
     }
 }
+
+module.exports = { DomainEvents, EventFactory };
