@@ -137,23 +137,31 @@ Resources:
             RestApiId:
               Ref: ProjectApi
 
-  # getAllItemsFunction:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     Handler: src/handlers/get-all-items.getAllItemsHandler
-  #     Runtime: nodejs12.x
-  #     MemorySize: 128
-  #     Timeout: 100
-  #     Description: A simple example includes a HTTP get method to get all items from a DynamoDB table.
-  #     Policies:
-  #     Environment:
-  #       Variables:
-  #     Events:
-  #       Api:
-  #         Type: Api
-  #         Properties:
-  #           Path: /
-  #           Method: GET
+  getAllItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/get-all-items.getAllItemsHandler
+      Runtime: nodejs12.x
+      MemorySize: 256
+      Timeout: 100
+      Description: A simple example includes a HTTP get method to get all items from a DynamoDB table.
+      Role: !GetAtt getAllItemsFunctionRole.Arn
+      Environment:
+        Variables:
+          deployed_environment: !Ref TargetEnvironment
+          dynamodb_projectTable: !Ref ProjectTable
+          dynamodb_endpointUrl: ''
+          sns_project_topic: !Ref ProjectTopic
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Auth:
+              Authorizer: ApiPostProjectAuthorizer
+            Path: /
+            Method: GET
+            RestApiId:
+              Ref: ProjectApi
 
   # getByIdFunction:
   #   Type: AWS::Serverless::Function
@@ -242,6 +250,45 @@ Resources:
               - Effect: Allow
                 Action:
                   - 'dynamodb:PutItem'
+                Resource: !GetAtt ProjectTable.Arn
+              - Effect: Allow
+                Action: 
+                  - 'xray:CreateGroup'
+                  - 'xray:CreateSamplingRule'
+                Resource: 
+                  - 'arn:aws:xray:*:*:group/*/*'
+                  - 'arn:aws:xray:*:*:sampling-rule/*'
+              - Effect: Allow
+                Action:
+                  - 'xray:PutTelemetryRecords'
+                  - 'xray:PutTraceSegments'
+                Resource: '*'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        
+  # IAM Role used by the Lambda for handling HTTP POST requests that create projects.
+  getAllItemsFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: !Sub 'Allows querying from ${ProjectTable} and returning the results'
+      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_getall'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_getall'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 'dynamodb:Query'
                 Resource: !GetAtt ProjectTable.Arn
               - Effect: Allow
                 Action: 
