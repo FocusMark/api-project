@@ -1,8 +1,8 @@
 let AWSXRay = require('aws-xray-sdk');
 let AWS = AWSXRay.captureAWS(require('aws-sdk'));
 
-const { CommandFactory, CommandTypes } = require('../commands/command-factory');
-const { CommandParser } = require('../commands/command-parser');
+const { CommandFactory, CommandTypes } = require('../command-factory');
+const { CommandParser } = require('../command-parser');
 const Response = require('../shared/response');
 
 let commandParser = new CommandParser();
@@ -37,9 +37,10 @@ exports.putItemHandler = async (event, context) => {
     let response;
     
     try {
-        
+        response = await command.execute(event);
     } catch(err) {
-        
+        console.info(err.message);
+        response = new Response(400, null, 'Server failed to process request');
     }
     
     commandExecuteSegment.close();

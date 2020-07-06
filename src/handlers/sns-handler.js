@@ -5,7 +5,7 @@ const Methodologies = require('../shared/methodologies');
 const Status = require('../shared/status');
 const Response = require('../shared/response');
 
-const { DomainCommands } = require('../commands/command-factory');
+const { DomainEvents } = require('../event-factory');
 
 let AWSXRay = require('aws-xray-sdk');
 let AWS = AWSXRay.captureAWS(require('aws-sdk'));
@@ -44,8 +44,10 @@ async function getEvents(payload) {
     let eventStoreQueryResults;
     
     try {
+        console.info(`Building query parameters for ${payload.projectId}`);
         let eventStoreParams = createEventStoreQueryParams(payload.projectId, payload.userId);
         eventStoreQueryResults = await eventStore.query(eventStoreParams).promise();
+        console.info(`Query for existing events related to Project ${payload.projectId} completed.`);
     } catch (err) {
         console.info(err);
         return null;
@@ -90,28 +92,27 @@ function createProjectTableParameters(project) {
             startDate: project.startDate,
             targetDate: project.targetDate,
             projectId: project.projectId,
-            userId: project.userId
+            userId: project.userId,
+            updatedAt: Date.now(),
         }
     };
 }
 
 function parseEvent(event) {
     console.info(`Parsing message for topic ${event.TopicArn} notification ${event.MessageId}`);
-    let payload = JSON.parse(event.Message);
+    let domainEvent = JSON.parse(event.Message);
+
+    let payload = domainEvent.payload
     let projectId = payload.projectId;
-    let userId = event.MessageAttributes.RecordOwner.Value;
+    let userId = payload.userId;
     
-    if (payload.userId === userId) {
-        console.info(`Parsing completed. Found Project ${payload.projectId} for user ${payload.userId}`);
-        return {
-            projectId: projectId,
-            userId: userId,
-            project: payload
-        };
-    } else {
-        console.info(`Parsing topic ${event.TopicArn} notification ${event.MessageId} failed. Payload was not supported`);
-        return null;
-    }
+    console.info(`Parsing completed. Found Project ${payload.projectId} for user ${payload.userId}`);
+    return {
+        projectId: projectId,
+        userId: userId,
+        project: payload,
+        event: domainEvent,
+    };
 }
 
 function createEventStoreQueryParams(projectId, userId) {
@@ -136,17 +137,29 @@ function aggregateEvents(events, userId, projectId) {
 	finalModel.projectId = projectId;
 	applyEventsToProject(finalModel, sortedEvents);
 	
+	// TODO: Should validate model but not sure on how best to handle failed validation resulting in events not reflected in the viewmodel datastore.
 	return finalModel;
 }
 
-function applyEventsToProject(project, events) {
-    console.info(`Applying ${events.length} events to the view model for Project ${project.projectId}`);
+function applyEventsToProject(emptyProject, events) {
+    console.info(`Applying ${events.length} events to the view model for Project ${emptyProject.projectId}`);
     
     events.forEach(currentEvent => {
         switch(currentEvent.event) {
-            case DomainCommands.CREATE_PROJECT:
-                console.info(`Applying ${DomainCommands.CREATE_PROJECT} event to Project ${project.projectId}`);
-                applyCreateCommand(project, currentEvent.eventRecord);
+            case DomainEvents.PROJECT_CREATED:
+                console.info(`Applying ${DomainEvents.PROJECT_CREATED} event to Project ${emptyProject.projectId}`);
+                applyCreateCommand(emptyProject, currentEvent.payload);
+                break;
+            case DomainEvents.PROJECT_ACTIVATED:
+                console.info(`Applying ${DomainEvents.PROJECT_ACTIVATED} event to Project ${emptyProject.projectId}`);
+                applyActivatecommand(emptyProject, currentEvent.payload);
+                break;
+            default:
+                console.info(`Unknown domain event of ${currentEvent.event} found and skipped.`);
+                break;
+            case DomainEvents.PROJECT_MOVED:
+                console.info(`Applying #{DomainEvents.PROJECT_MOVED} event to the Project ${emptyProject.projectId}`);
+                applyMoveProjectCommand(emptyProject, currentEvent.payload);
                 break;
         }
     })
@@ -155,9 +168,17 @@ function applyEventsToProject(project, events) {
 function applyCreateCommand(project, event) {
     project.setTitle(event.title);
     project.setPathOrAssignDefault(event.path);
-    project.setTargetDateOrAssignDefault(project.targetDate);
-    project.setStartDateOrAssignDefault(project.startDate);
-    project.setStatus(project.status);
-    project.setColorOrAssignDefault(project.color);
-    project.setMethodologyOrAssignDefault(project.kind);
+    project.setTargetDateOrAssignDefault(event.targetDate);
+    project.setStartDateOrAssignDefault(event.startDate);
+    project.setStatus(event.status);
+    project.setColorOrAssignDefault(event.color);
+    project.setMethodologyOrAssignDefault(event.kind);
+}
+
+function applyActivatecommand(project, event) {
+    project.setStatus(event.status);
+}
+
+function applyMoveProjectCommand(project, event) {
+    project.setPathOrAssignDefault(event.path);
 }

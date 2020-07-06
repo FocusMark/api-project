@@ -88,7 +88,7 @@ Resources:
       FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_post'
       Handler: src/handlers/post-item.postItemHandler
       Runtime: nodejs12.x
-      MemorySize: 128
+      MemorySize: 256
       Timeout: 10
       Description: HTT POST handler for the /project API endpoint
       Role: !GetAtt postItemFunctionRole.Arn
@@ -106,6 +106,34 @@ Resources:
               Authorizer: ApiPostProjectAuthorizer
             Path: /
             Method: POST
+            RestApiId:
+              Ref: ProjectApi
+              
+  # Lambda for handling HTTP POST requests that create projects.
+  putItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_put'
+      Handler: src/handlers/put-item.putItemHandler
+      Runtime: nodejs12.x
+      MemorySize: 256
+      Timeout: 10
+      Description: HTTP PUT handler for the /project/{projectId} API endpoint
+      Role: !GetAtt putItemFunctionRole.Arn
+      Environment:
+        Variables:
+          deployed_environment: !Ref TargetEnvironment
+          dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
+          dynamodb_endpointUrl: ''
+          sns_project_topic: !Ref ProjectTopic
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Auth:
+              Authorizer: ApiPostProjectAuthorizer
+            Path: /{projectId}
+            Method: PUT
             RestApiId:
               Ref: ProjectApi
 
@@ -168,7 +196,7 @@ Resources:
           dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
           dynamodb_endpointUrl: ''
           sns_project_topic: !Ref ProjectTopic
-      MemorySize: 128
+      MemorySize: 256
       Timeout: 900
       Tracing: Active
             
@@ -256,6 +284,49 @@ Resources:
               - Effect: Allow
                 Action: 
                   - 'dynamodb:PutItem'
+                Resource: !GetAtt ProjectEventSourceTable.Arn
+              - Effect: Allow
+                Action: 
+                  - 'xray:CreateGroup'
+                  - 'xray:CreateSamplingRule'
+                Resource: 
+                  - 'arn:aws:xray:*:*:group/*/*'
+                  - 'arn:aws:xray:*:*:sampling-rule/*'
+              - Effect: Allow
+                Action:
+                  - 'xray:PutTelemetryRecords'
+                  - 'xray:PutTraceSegments'
+                Resource: '*'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        
+  # IAM Role used by the Lambda for handling HTTP POST requests that create projects.
+  putItemFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: !Sub 'Allows inserting new records into the ${ProjectEventSourceTable} table that represent updates to a Project'
+      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_put'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_put'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 'sns:Publish'
+                Resource: !Ref ProjectTopic
+              - Effect: Allow
+                Action: 
+                  - 'dynamodb:PutItem'
+                  - 'dynamodb:Query'
                 Resource: !GetAtt ProjectEventSourceTable.Arn
               - Effect: Allow
                 Action: 

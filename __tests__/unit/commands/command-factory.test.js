@@ -1,5 +1,5 @@
 const { CommandFactory, DomainCommands, CommandTypes } = require('../../../src/commands/command-factory');
-const CreateProjectCommand = require('../../../src/commands/create-project-command');
+const CreateProjectCommand = require('../../../src/commands/cmd-create-project');
 
 const chai = require('chai');
 
