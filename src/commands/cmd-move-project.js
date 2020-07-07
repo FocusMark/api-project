@@ -127,6 +127,7 @@ class MoveProjectCommand {
     createQueryParameters(userId, projectId) {
         return {
             TableName: this.configuration.data.dynamodb_projectEventSourceTable,
+            //Limit: 1 // TODO: Test this works
             ExpressionAttributeValues: {
                 ':upid': `${userId}_${projectId}`,
             },

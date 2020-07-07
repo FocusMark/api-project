@@ -80,13 +80,12 @@ Resources:
               Header: 'Authorization'
             AuthorizationScopes:
               - "app.focusmark.api.project/project.read"
-
-  # Lambda for handling HTTP POST requests that create projects.
-  postItemFunction:
+              
+  postCommandFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_post'
-      Handler: src/handlers/post-item.postItemHandler
+      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_postcommand'
+      Handler: src/command-handler.commandHandler
       Runtime: nodejs12.x
       MemorySize: 256
       Timeout: 10
@@ -109,17 +108,16 @@ Resources:
             RestApiId:
               Ref: ProjectApi
               
-  # Lambda for handling HTTP POST requests that create projects.
-  putItemFunction:
+  putCommandFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_put'
-      Handler: src/handlers/put-item.putItemHandler
+      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_putcommand'
+      Handler: src/command-handler.commandHandler
       Runtime: nodejs12.x
       MemorySize: 256
       Timeout: 10
-      Description: HTTP PUT handler for the /project/{projectId} API endpoint
-      Role: !GetAtt putItemFunctionRole.Arn
+      Description: HTT PUT handler for the /project API endpoint
+      Role: !GetAtt postItemFunctionRole.Arn
       Environment:
         Variables:
           deployed_environment: !Ref TargetEnvironment
@@ -136,6 +134,62 @@ Resources:
             Method: PUT
             RestApiId:
               Ref: ProjectApi
+
+  # Lambda for handling HTTP POST requests that create projects.
+  # postItemFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_post'
+  #     Handler: src/handlers/post-item.postItemHandler
+  #     Runtime: nodejs12.x
+  #     MemorySize: 256
+  #     Timeout: 10
+  #     Description: HTT POST handler for the /project API endpoint
+  #     Role: !GetAtt postItemFunctionRole.Arn
+  #     Environment:
+  #       Variables:
+  #         deployed_environment: !Ref TargetEnvironment
+  #         dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
+  #         dynamodb_endpointUrl: ''
+  #         sns_project_topic: !Ref ProjectTopic
+  #     Events:
+  #       Api:
+  #         Type: Api
+  #         Properties:
+  #           Auth:
+  #             Authorizer: ApiPostProjectAuthorizer
+  #           Path: /
+  #           Method: POST
+  #           RestApiId:
+  #             Ref: ProjectApi
+              
+  # Lambda for handling HTTP POST requests that create projects.
+  # putItemFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_put'
+  #     Handler: src/handlers/put-item.putItemHandler
+  #     Runtime: nodejs12.x
+  #     MemorySize: 256
+  #     Timeout: 10
+  #     Description: HTTP PUT handler for the /project/{projectId} API endpoint
+  #     Role: !GetAtt putItemFunctionRole.Arn
+  #     Environment:
+  #       Variables:
+  #         deployed_environment: !Ref TargetEnvironment
+  #         dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
+  #         dynamodb_endpointUrl: ''
+  #         sns_project_topic: !Ref ProjectTopic
+  #     Events:
+  #       Api:
+  #         Type: Api
+  #         Properties:
+  #           Auth:
+  #             Authorizer: ApiPostProjectAuthorizer
+  #           Path: /{projectId}
+  #           Method: PUT
+  #           RestApiId:
+  #             Ref: ProjectApi
 
   getAllItemsFunction:
     Type: AWS::Serverless::Function

@@ -5,15 +5,16 @@ const Status = require('../shared/status');
 const Methodologies = require('../shared/methodologies');
 
 class ProjectModel {
-    
-    constructor(userId, title) {
-        this.userId = userId;
+
+    constructor() {
         this.projectId = uuidv4();
         
-        this.setTitle(title);
         this.setStatus(Status.PLANNING);
+        this.setPathOrAssignDefault('/');
+        this.setColorOrAssignDefault();
+        this.setMethodologyOrAssignDefault(Methodologies.KANBAN);
     }
-    
+
     setTitle(title) {
         this.title = title;
     }
