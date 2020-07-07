@@ -1,4 +1,4 @@
-const Response = require('./shared/response');
+const Response = require('../shared/response');
 
 const CommandParameterKey = 'domain-command';
 

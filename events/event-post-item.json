@@ -1,9 +1,0 @@
-{
-    "httpMethod": "POST",
-    "path": "/",
-    "body": "{\"title\": \"My Basement project\"}",
-    "headers": {
-        "Content-Type": "application/json;domain-command=create-project",
-        "Authorization": "Bearer ciOiJSUzI1NiJ9.eyJzdWIiOiI1OTcyMTM1Ni03YmY5LTRiZGQtYjBlNi1kNTYzOTM2MzZjMGYiLCJ0b2tlbl91c2UiOiJhY2Nlc3MiLCJzY29wZSI6ImFwcC5mb2N1c21hcmsud29ya2Jvb2tcL3dvcmtib29rLnJlYWQgb3BlbmlkIGFwcC5mb2N1c21hcmsud29ya2Jvb2tcL3dvcmtib29rLndyaXRlIiwiYXV0aF90aW1lIjoxNTkwNDQ1MTMwLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAudXMtZWFzdC0xLmFtYXpvbmF3cy5jb21cL3VzLWVhc3QtMV91TENxcTloWUoiLCJleHAiOjE1OTA0NDg3MzAsImlhdCI6MTU5MDQ0NTEzMCwidmVyc2lvbiI6MiwianRpIjoiNGZkOGEyYzAtMmZkYS00YWEwLTk1OTItMWFhODI0ZWNmMWI3IiwiY2xpZW50X2lkIjoiMnYxODk5Y29tbnQ4amU3aGcybHNzMWoxMzQiLCJ1c2VybmFtZSI6ImZvb2JhciJ9.4eddoSQ5-p51e-7HCL0kFO6Ex-FpnDf4En2otSYf7--kv5JLz33Adh1V63WSwWYAvCexlGQ"
-    }
-}
