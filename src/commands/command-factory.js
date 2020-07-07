@@ -1,10 +1,11 @@
 const AWS = require('aws-sdk');
 
-const { DomainEvents, EventFactory } = require('./event-factory');
-const Configuration = require('./shared/configuration');
-const CommandCreateProject = require('./commands/cmd-new-project');
-const ActivateProjectCommand = require('./commands/cmd-activate-project');
-const MoveProjectCommand = require('./commands/cmd-move-project');
+const { DomainEvents } = require('../events/event-factory');
+const Configuration = require('../shared/configuration');
+
+const CreateCommand = require('./command-create');
+const UpdateCommand = require('./command-update');
+
 
 /** Represents a valid and supported set of Domain commands. **/
 const CommandTypes = {
@@ -54,30 +55,14 @@ class CommandFactory {
             // Make sure that if additional commands are added that the command-factory.test.js is updated.
             case DomainCommands.CREATE_PROJECT.name:
                 console.info(`Command is identified as the ${DomainCommands.CREATE_PROJECT.name} command. Instantiating the associated Command.`);
-                return this.getCreateProjectCommand(DomainCommands.CREATE_PROJECT, DomainEvents.PROJECT_CREATED, CommandTypes.CREATE);
+                return new CreateCommand(DomainCommands.CREATE_PROJECT, DomainEvents.PROJECT_CREATED);
             case DomainCommands.ACTIVATE_PROJECT.name:
                 console.info(`Command is identified as the ${DomainCommands.ACTIVATE_PROJECT.name} command. Instantiating the associated Command.`);
-                return this.getActivateProjectCommand(DomainCommands.ACTIVATE_PROJECT, DomainEvents.PROJECT_ACTIVATED, CommandTypes.UPDATE);
+                return new UpdateCommand(DomainCommands.ACTIVATE_PROJECT, DomainEvents.PROJECT_ACTIVATED, { projectId: '', userId: '', status: '' });
             case DomainCommands.MOVE_PROJECT.name:
                 console.info(`Command is identified as the ${DomainCommands.MOVE_PROJECT.name} command. Instantiating the associated Command.`);
-                return this.getMoveProjectCommand(DomainCommands.MOVE_PROJECT, DomainEvents.PROJECT_MOVED, CommandTypes.UPDATE);
+                return new UpdateCommand(DomainCommands.MOVE_PROJECT, DomainEvents.PROJECT_MOVED);
         }
-    }
-    
-    getCreateProjectCommand(command, domainEvent, commandType) {
-        return new CommandCreateProject(command, domainEvent);
-    }
-    
-    getActivateProjectCommand(command, domainEvent, commandType) {
-        let dynamoDbClient = new AWS.DynamoDB.DocumentClient();
-        let sns = new AWS.SNS();
-        return new ActivateProjectCommand(command, commandType, domainEvent, dynamoDbClient, sns);
-    }
-    
-    getMoveProjectCommand(command, domainEvent, commandType) {
-        let dynamoDbClient = new AWS.DynamoDB.DocumentClient();
-        let sns = new AWS.SNS();
-        return new MoveProjectCommand(command, commandType, domainEvent, dynamoDbClient, sns);
     }
 }
 

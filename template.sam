@@ -85,7 +85,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_postcommand'
-      Handler: src/command-handler.commandHandler
+      Handler: src/handlers/command-handler.commandHandler
       Runtime: nodejs12.x
       MemorySize: 256
       Timeout: 10
@@ -112,12 +112,12 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_putcommand'
-      Handler: src/command-handler.commandHandler
+      Handler: src/handlers/command-handler.commandHandler
       Runtime: nodejs12.x
       MemorySize: 256
       Timeout: 10
       Description: HTT PUT handler for the /project API endpoint
-      Role: !GetAtt postItemFunctionRole.Arn
+      Role: !GetAtt putItemFunctionRole.Arn
       Environment:
         Variables:
           deployed_environment: !Ref TargetEnvironment

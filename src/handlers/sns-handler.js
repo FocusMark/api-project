@@ -133,7 +133,8 @@ function aggregateEvents(events, userId, projectId) {
 		.sort((item1, item2) => item1.eventTime - item2.eventTime);
 	
 	console.info(`Preparing final aggregated view model for Project ${projectId}`);
-	var finalModel = new ProjectModel(userId);
+	var finalModel = new ProjectModel();
+	finalModel.userId = userId;
 	finalModel.projectId = projectId;
 	applyEventsToProject(finalModel, sortedEvents);
 	
@@ -166,6 +167,7 @@ function applyEventsToProject(emptyProject, events) {
 }
 
 function applyCreateCommand(project, event) {
+    console.info('Applying the create command');
     project.setTitle(event.title);
     project.setPathOrAssignDefault(event.path);
     project.setTargetDateOrAssignDefault(event.targetDate);

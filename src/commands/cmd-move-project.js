@@ -4,7 +4,7 @@ const Configuration = require('../shared/configuration');
 const JwtUser = require('../shared/jwt-user');
 const Response = require('../shared/response');
 const Status = require('../shared/status');
-const { EventFactory } = require('../event-factory');
+const { EventFactory } = require('../events/event-factory');
 
 // /project/{projectId} endpoint
 class MoveProjectCommand {
