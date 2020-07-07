@@ -18,7 +18,7 @@ Resources:
   ProjectTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-project'
+      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-project_readstore'
       AttributeDefinitions:
         - AttributeName: userId
           AttributeType: S
@@ -37,7 +37,7 @@ Resources:
   ProjectEventSourceTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-projectevents'
+      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-project_eventstore'
       AttributeDefinitions:
         - AttributeName: userId_ProjectId
           AttributeType: S
@@ -49,8 +49,8 @@ Resources:
         - AttributeName: eventId
           KeyType: RANGE
       ProvisionedThroughput:
-        ReadCapacityUnits: 2
-        WriteCapacityUnits: 2
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
 
   # API Gateway used by the Project API.
   # Auth setup example from https://github.com/awslabs/serverless-application-model/blob/master/examples/2016-10-31/api_cognito_auth/template.yaml
@@ -84,7 +84,7 @@ Resources:
   postCommandFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_postcommand'
+      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_command_post'
       Handler: src/handlers/command-handler.commandHandler
       Runtime: nodejs12.x
       MemorySize: 256
@@ -111,7 +111,7 @@ Resources:
   putCommandFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_putcommand'
+      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_command_put'
       Handler: src/handlers/command-handler.commandHandler
       Runtime: nodejs12.x
       MemorySize: 256
@@ -135,67 +135,11 @@ Resources:
             RestApiId:
               Ref: ProjectApi
 
-  # Lambda for handling HTTP POST requests that create projects.
-  # postItemFunction:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_post'
-  #     Handler: src/handlers/post-item.postItemHandler
-  #     Runtime: nodejs12.x
-  #     MemorySize: 256
-  #     Timeout: 10
-  #     Description: HTT POST handler for the /project API endpoint
-  #     Role: !GetAtt postItemFunctionRole.Arn
-  #     Environment:
-  #       Variables:
-  #         deployed_environment: !Ref TargetEnvironment
-  #         dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
-  #         dynamodb_endpointUrl: ''
-  #         sns_project_topic: !Ref ProjectTopic
-  #     Events:
-  #       Api:
-  #         Type: Api
-  #         Properties:
-  #           Auth:
-  #             Authorizer: ApiPostProjectAuthorizer
-  #           Path: /
-  #           Method: POST
-  #           RestApiId:
-  #             Ref: ProjectApi
-              
-  # Lambda for handling HTTP POST requests that create projects.
-  # putItemFunction:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_put'
-  #     Handler: src/handlers/put-item.putItemHandler
-  #     Runtime: nodejs12.x
-  #     MemorySize: 256
-  #     Timeout: 10
-  #     Description: HTTP PUT handler for the /project/{projectId} API endpoint
-  #     Role: !GetAtt putItemFunctionRole.Arn
-  #     Environment:
-  #       Variables:
-  #         deployed_environment: !Ref TargetEnvironment
-  #         dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
-  #         dynamodb_endpointUrl: ''
-  #         sns_project_topic: !Ref ProjectTopic
-  #     Events:
-  #       Api:
-  #         Type: Api
-  #         Properties:
-  #           Auth:
-  #             Authorizer: ApiPostProjectAuthorizer
-  #           Path: /{projectId}
-  #           Method: PUT
-  #           RestApiId:
-  #             Ref: ProjectApi
-
   getAllItemsFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/query-handler.queryHandler
-      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_getallitems'
+      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_query_all'
       Runtime: nodejs12.x
       MemorySize: 256
       Timeout: 100
@@ -217,24 +161,6 @@ Resources:
             Method: GET
             RestApiId:
               Ref: ProjectApi
-
-  # getByIdFunction:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     Handler: src/handlers/get-by-id.getByIdHandler
-  #     Runtime: nodejs12.x
-  #     MemorySize: 128
-  #     Timeout: 100
-  #     Description: A simple example includes a HTTP get method to get one item by id from a DynamoDB table.
-  #     Policies:
-  #     Environment:
-  #       Variables:
-  #     Events:
-  #       Api:
-  #         Type: Api
-  #         Properties:
-  #           Path: /{id}
-  #           Method: GET
   
   # SNS Topic used for publishing events as side-effects to Commands.     
   ProjectTopic:
@@ -283,7 +209,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       Description: !Sub 'Allows querying from ${ProjectEventSourceTable} and producing a queryable view of the data in the ${ProjectTable} table'
-      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_sns_subscriber'
+      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_event_handler'
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
