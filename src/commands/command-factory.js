@@ -1,13 +1,8 @@
-const AWS = require('aws-sdk');
-
 const { DomainEvents } = require('../events/event-factory');
-const Configuration = require('../shared/configuration');
-const Status = require('../shared/status');
+
 const ProjectModel = require('../shared/project-model');
 
 const Command = require('./command');
-const CreateCommand = require('./command-create');
-const UpdateCommand = require('./command-update');
 
 
 /** Represents a valid and supported set of Domain commands. **/
@@ -33,11 +28,6 @@ const DomainCommands = {
 };
 
 class CommandFactory {
-    
-    constructor() {
-        console.info('Instantiating Commandfactory. Creating list of allowed Commands');
-        this.configuration = new Configuration();
-    }
     
     isCommandAllowed(command, httpMethod) {
         console.info(`Checking if ${command} is compatible with the given ${httpMethod} verb.`);

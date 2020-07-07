@@ -194,7 +194,7 @@ Resources:
   getAllItemsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/get-all-items.getAllItemsHandler
+      Handler: src/handlers/query-handler.queryHandler
       FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_getallitems'
       Runtime: nodejs12.x
       MemorySize: 256
