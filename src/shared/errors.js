@@ -22,7 +22,11 @@ const Errors = {
     PROJECT_DOES_NOT_EXIST: {
         code: 6,
         message: 'The given project does not exist.'
-    }
+    },
+    COMMAND_NOT_SUPPORTED: {
+        code: 7,
+        message: 'The command provided is not supported.'
+    },
 };
 
 module.exports = Errors;
