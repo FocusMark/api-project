@@ -46,7 +46,10 @@ class Command {
     
     async init() {
         console.info('Initializing base Command');
-
+        if (this.request.httpMethod === 'PUT' && Object.keys(this.payloadTemplate).length != Object.keys(this.requestBody).length) {
+            throw Errors.MALFORMED_BODY;
+        }
+        
         await this.setProject();
         
         let validationResult = this.project.validate();
@@ -56,24 +59,6 @@ class Command {
             throw Errors.PROJECT_VALIDATION_FAILED;
         }
         console.info('Initialization completed');
-    }
-    
-    async setProject() {
-        this.project = new ProjectModel();
-        this.project.userId = this.user.userId;
-        
-        if (this.request.httpMethod === 'PUT') {
-            if (!this.request.pathParameters && !this.request.pathParameters.projectId) {
-                throw Errors.PROJECT_ID_MISSING;
-            }
-            
-            this.project = await this.eventStore.getEventsForProject(this.request.pathParameters.projectId, this.user.userId);
-            if (!this.project) {
-                throw Errors.PROJECT_ID_MISSING;
-            }
-        }
-        
-        this.buildProject(this.project);
     }
     
     async run() {
@@ -112,6 +97,24 @@ class Command {
             console.info(err);
             return new Response(500, null, 'Failed to create the Project.');
         }
+    }
+    
+    async setProject() {
+        this.project = new ProjectModel();
+        this.project.userId = this.user.userId;
+        
+        if (this.request.httpMethod === 'PUT') {
+            if (!this.request.pathParameters && !this.request.pathParameters.projectId) {
+                throw Errors.PROJECT_ID_MISSING;
+            }
+            
+            this.project = await this.eventStore.getEventsForProject(this.request.pathParameters.projectId, this.user.userId);
+            if (!this.project) {
+                throw Errors.PROJECT_ID_MISSING;
+            }
+        }
+        
+        this.buildProject(this.project);
     }
     
     buildProject(project) {

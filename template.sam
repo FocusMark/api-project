@@ -247,10 +247,10 @@ Resources:
   projectSnsSubscriberFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler: src/handlers/sns-handler.handler
+      Handler: src/handlers/project-event-handler.handler
       Runtime: nodejs12.x
       Role: !GetAtt projectSnsSubscriberFunctionRole.Arn
-      FunctionName: !Sub "focusmark-${TargetEnvironment}-lambda-api_project_sns_subscriber"
+      FunctionName: !Sub "focusmark-${TargetEnvironment}-lambda-api_project_event_handler"
       Description: 'Consumes Project SNS events from an SNS Topic and stores it in a datastore.'
       Environment:
         Variables:

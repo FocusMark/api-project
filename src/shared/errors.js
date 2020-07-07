@@ -14,6 +14,14 @@ const Errors = {
     MALFORMED_BODY: {
         code: 4,
         message: 'field is not supported.'
+    },
+    MALFORMED_PROJECT_EVENT: {
+        code: 5,
+        message: 'Expected event to contain a valid payload. It did not.'
+    },
+    PROJECT_DOES_NOT_EXIST: {
+        code: 6,
+        message: 'The given project does not exist.'
     }
 };
 
