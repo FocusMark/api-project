@@ -1,5 +1,4 @@
 const { v4: uuidv4 } = require('uuid');
-const Validator = require('jsonschema').Validator;
 const validate = require("validate.js");
 const Status = require('../shared/status');
 const Methodologies = require('../shared/methodologies');
@@ -9,10 +8,14 @@ class ProjectModel {
     constructor() {
         this.projectId = uuidv4();
         
+        this.setTitle(null);
         this.setStatus(Status.PLANNING);
         this.setPathOrAssignDefault('/');
-        this.setColorOrAssignDefault();
         this.setMethodologyOrAssignDefault(Methodologies.KANBAN);
+        
+        this.setColorOrAssignDefault();
+        this.setTargetDateOrAssignDefault();
+        this.setStartDateOrAssignDefault();
     }
 
     setTitle(title) {

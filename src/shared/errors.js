@@ -11,6 +11,10 @@ const Errors = {
         code: 3,
         message: 'Project is not valid'
     },
+    MALFORMED_BODY: {
+        code: 4,
+        message: 'field is not supported.'
+    }
 };
 
 module.exports = Errors;

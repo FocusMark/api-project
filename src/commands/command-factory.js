@@ -3,7 +3,9 @@ const AWS = require('aws-sdk');
 const { DomainEvents } = require('../events/event-factory');
 const Configuration = require('../shared/configuration');
 const Status = require('../shared/status');
+const ProjectModel = require('../shared/project-model');
 
+const Command = require('./command');
 const CreateCommand = require('./command-create');
 const UpdateCommand = require('./command-update');
 
@@ -20,8 +22,8 @@ const DomainCommands = {
         name: 'create-project',
         type: CommandTypes.CREATE
     },
-    ACTIVATE_PROJECT: {
-        name: 'activate-project',
+    CHANGE_PROJECT_STATUS: {
+        name: 'change-project-status',
         type: CommandTypes.UPDATE,
     },
     MOVE_PROJECT: {
@@ -56,13 +58,13 @@ class CommandFactory {
             // Make sure that if additional commands are added that the command-factory.test.js is updated.
             case DomainCommands.CREATE_PROJECT.name:
                 console.info(`Command is identified as the ${DomainCommands.CREATE_PROJECT.name} command. Instantiating the associated Command.`);
-                return new CreateCommand(DomainCommands.CREATE_PROJECT, DomainEvents.PROJECT_CREATED);
-            case DomainCommands.ACTIVATE_PROJECT.name:
-                console.info(`Command is identified as the ${DomainCommands.ACTIVATE_PROJECT.name} command. Instantiating the associated Command.`);
-                return new UpdateCommand(DomainCommands.ACTIVATE_PROJECT, DomainEvents.PROJECT_ACTIVATED, { projectId: '', userId: '', status: Status.ACTIVE });
+                return new Command(DomainCommands.CREATE_PROJECT, DomainEvents.PROJECT_CREATED, new ProjectModel());
+            case DomainCommands.CHANGE_PROJECT_STATUS.name:
+                console.info(`Command is identified as the ${DomainCommands.CHANGE_PROJECT_STATUS.name} command. Instantiating the associated Command.`);
+                return new Command(DomainCommands.CHANGE_PROJECT_STATUS, DomainEvents.PROJECT_STATUS_CHANGED, { status: '' });
             case DomainCommands.MOVE_PROJECT.name:
                 console.info(`Command is identified as the ${DomainCommands.MOVE_PROJECT.name} command. Instantiating the associated Command.`);
-                return new UpdateCommand(DomainCommands.MOVE_PROJECT, DomainEvents.PROJECT_MOVED);
+                return new Command(DomainCommands.MOVE_PROJECT, DomainEvents.PROJECT_MOVED, { path: '' });
         }
     }
 }
