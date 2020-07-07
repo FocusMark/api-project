@@ -2,6 +2,7 @@ const AWS = require('aws-sdk');
 
 const { DomainEvents } = require('../events/event-factory');
 const Configuration = require('../shared/configuration');
+const Status = require('../shared/status');
 
 const CreateCommand = require('./command-create');
 const UpdateCommand = require('./command-update');
@@ -58,7 +59,7 @@ class CommandFactory {
                 return new CreateCommand(DomainCommands.CREATE_PROJECT, DomainEvents.PROJECT_CREATED);
             case DomainCommands.ACTIVATE_PROJECT.name:
                 console.info(`Command is identified as the ${DomainCommands.ACTIVATE_PROJECT.name} command. Instantiating the associated Command.`);
-                return new UpdateCommand(DomainCommands.ACTIVATE_PROJECT, DomainEvents.PROJECT_ACTIVATED, { projectId: '', userId: '', status: '' });
+                return new UpdateCommand(DomainCommands.ACTIVATE_PROJECT, DomainEvents.PROJECT_ACTIVATED, { projectId: '', userId: '', status: Status.ACTIVE });
             case DomainCommands.MOVE_PROJECT.name:
                 console.info(`Command is identified as the ${DomainCommands.MOVE_PROJECT.name} command. Instantiating the associated Command.`);
                 return new UpdateCommand(DomainCommands.MOVE_PROJECT, DomainEvents.PROJECT_MOVED);

@@ -61,9 +61,9 @@ class Command {
     
     async run() {
         // TODO: Need to solve for producing a command based on current body or 'intent' (bodyless request).
-        // Each event at the moment is just re-saving the same project data.
+        // Each event at the moment is just re-saving the same project data. - TEST THIS
         console.info('Running base Command');
-        let newEvent = this.eventFactory.fromCommand(this.domainEvent, this.project);
+        let newEvent = this.eventFactory.fromCommand(this.domainEvent, this.payload);
 
         try {
             await this.eventStore.saveEvent(newEvent);

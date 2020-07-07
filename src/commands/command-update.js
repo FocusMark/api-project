@@ -23,6 +23,11 @@ class UpdateCommand extends Command {
             throw Errors.PROJECT_ID_MISSING;
         }
         
+        // Update the project to reflect changes made from the requested .ayload
+        for(const field in this.payload) {
+            this.project[field] = this.payload[field];
+        }
+        
         await super.init();
     }
 }
