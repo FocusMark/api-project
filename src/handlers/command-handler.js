@@ -10,12 +10,15 @@ let commandParser = new CommandParser();
 let commandFactory = new CommandFactory();
 
 exports.commandHandler = async (event, context) => {
-    let command = getCommand(event);
-    
     try {
+        let command = getCommand(event);
+        
         console.info('Executing the requested command.');
         return await command.execute(event);
     } catch(err) {
+        if (err.code === 7) {
+            return new Response(404, null, err.message);
+        }
         return new Response(400, null, `${err.code}: ${err.message}`);
     }
 }
@@ -27,13 +30,13 @@ function getCommand(event) {
         let desiredCommand = commandParser.getCommandFromLambda(event);
 
         if (!commandFactory.isCommandAllowed(desiredCommand, event.httpMethod)) {
-            return new Response(404, {}, 'Command not allowed.');
+            throw Errors.COMMAND_NOT_SUPPORTED;
         }
         
         console.info(`Request contained ${desiredCommand} command. Attempting to instantiate.`);
         return commandFactory.fromCommand(desiredCommand);
     } catch(err) {
         console.error(err);
-        return new Response(404, {}, `Command missing or not supported.`);
+        throw Errors.COMMAND_NOT_SUPPORTED;
     }
 }

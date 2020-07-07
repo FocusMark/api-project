@@ -25,6 +25,10 @@ const DomainCommands = {
         name: 'move-project',
         type: CommandTypes.UPDATE,
     },
+    RENAME_PROJECT: {
+        name: 'rename-project',
+        type: CommandTypes.UPDATE,
+    },
 };
 
 class CommandFactory {
@@ -55,6 +59,9 @@ class CommandFactory {
             case DomainCommands.MOVE_PROJECT.name:
                 console.info(`Command is identified as the ${DomainCommands.MOVE_PROJECT.name} command. Instantiating the associated Command.`);
                 return new Command(DomainCommands.MOVE_PROJECT, DomainEvents.PROJECT_MOVED, { path: '' });
+            case DomainCommands.RENAME_PROJECT.name:
+                console.info(`Command is identified as the ${DomainCommands.RENAME_PROJECT.name} command. Instantiating the associated Command.`);
+                return new Command(DomainCommands.RENAME_PROJECT, DomainEvents.PROJECT_RENAMED, { title: '' });
         }
     }
 }
