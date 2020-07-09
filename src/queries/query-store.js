@@ -2,6 +2,7 @@ const AWS = require('aws-sdk');
 
 // Shared models
 const Configuration = require('../shared/configuration');
+const QueryData = require('./query-data');
 
 class QueryStore {
     constructor() {
@@ -28,16 +29,26 @@ class QueryStore {
             ExpressionAttributeValues: {
                 ':uid': userId,
             },
-            KeyConditionExpression: 'userId = :uid'
+            KeyConditionExpression: 'userId = :uid',
+            //Limit: 5
         };
         
         let queryResults = await this.dynamoDbClient.query(params).promise();
         let projects = queryResults.Items;
+        console.info(queryResults);
+        console.info(`Found ${projects.length} items for user`);
         
         // No reason to include the userId in the response. It exists in the table to query by but it should not go with the data.
         // Client apps can use their id_token or access_token to get this if needed.
         projects.forEach(item => delete item.userId);
-        return projects;
+        
+        if (queryResults.LastEvaluatedKey) {
+            console.info('Additional records are available for querying in DynamoDB.');
+            return { projects: projects, lastProjectId: queryResults.LastEvaluatedKey.projectId, };
+        } else {
+            console.info('Retrieved all records for the user.');
+            return { projects: projects, };
+        }
     }
 }
 
