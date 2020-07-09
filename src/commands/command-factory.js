@@ -5,13 +5,14 @@ const ProjectModel = require('../shared/project-model');
 const Command = require('./command');
 
 
-/** Represents a valid and supported set of Domain commands. **/
+// The command type that each Command must support.
 const CommandTypes = {
     CREATE: 'POST',
     UPDATE: 'PUT',
     DELETE: 'DELETE',
 };
 
+// Commands that are supported by the API
 const DomainCommands = {
     CREATE_PROJECT: {
         name: 'create-project',
