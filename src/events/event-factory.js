@@ -5,6 +5,7 @@ const DomainEvents = {
     PROJECT_STATUS_CHANGED: 'project-status-changed',
     PROJECT_MOVED: 'project-moved',
     PROJECT_RENAMED: 'project-renamed',
+    PROJECT_RESCHEDULED: 'project-rescheduled',
 };
 
 class EventFactory {

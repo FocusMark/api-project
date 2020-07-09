@@ -29,6 +29,10 @@ const DomainCommands = {
         name: 'rename-project',
         type: CommandTypes.UPDATE,
     },
+    RESCHEDULE_PROJECT: {
+        name: 'reschedule-project',
+        type: CommandTypes.UPDATE,
+    },
 };
 
 class CommandFactory {
@@ -62,6 +66,9 @@ class CommandFactory {
             case DomainCommands.RENAME_PROJECT.name:
                 console.info(`Command is identified as the ${DomainCommands.RENAME_PROJECT.name} command. Instantiating the associated Command.`);
                 return new Command(DomainCommands.RENAME_PROJECT, DomainEvents.PROJECT_RENAMED, { title: '' });
+            case DomainCommands.RESCHEDULE_PROJECT.name:
+                console.info(`Command is identified as the ${DomainCommands.RESCHEDULE_PROJECT.name} command. Instantiating the associated Command.`);
+                return new Command(DomainCommands.RESCHEDULE_PROJECT, DomainEvents.PROJECT_RESCHEDULED, { targetDate: '', startDate: '' });
         }
     }
 }
