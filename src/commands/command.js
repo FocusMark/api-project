@@ -92,7 +92,7 @@ class Command {
 
         try {
             await this.eventStore.saveEvent(newEvent);
-            return new Response(202, this.project.projectId);
+            return new Response(202, this.project);
         } catch(err) {
             console.info(err);
             return new Response(500, null, 'Failed to create the Project.');
