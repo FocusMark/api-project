@@ -156,8 +156,35 @@ Resources:
           Type: Api
           Properties:
             Auth:
-              Authorizer: ApiPostProjectAuthorizer
+              Authorizer: ApiGetProjectAuthorizer
             Path: /
+            Method: GET
+            RestApiId:
+              Ref: ProjectApi
+              
+  getByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/query-handler.queryHandler
+      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_query_Id'
+      Runtime: nodejs12.x
+      MemorySize: 256
+      Timeout: 100
+      Description: HTTP GET handler for the /project/{projectId} API endpoint to retrieve a specific Project for a user.
+      Role: !GetAtt getAllItemsFunctionRole.Arn
+      Environment:
+        Variables:
+          deployed_environment: !Ref TargetEnvironment
+          dynamodb_projectTable: !Ref ProjectTable
+          dynamodb_endpointUrl: ''
+          sns_project_topic: !Ref ProjectTopic
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Auth:
+              Authorizer: ApiGetProjectAuthorizer
+            Path: /{projectId}
             Method: GET
             RestApiId:
               Ref: ProjectApi
