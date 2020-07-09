@@ -23,6 +23,20 @@ class QueryStore {
         await this.dynamoDbClient.put(putParameters).promise();
     }
     
+    async getProjectForuser(userId, projectId) {
+        let params = {
+            TableName: this.configuration.data.dynamodb_projectTable,
+            Key: { userId: userId, projectId: projectId },
+        };
+        
+        let fetchedProject = await this.dynamoDbClient.get(params).promise();
+        if (Object.keys(fetchedProject).length == 0) {
+            return null;
+        }
+        
+        return fetchedProject.Item;
+    }
+    
     async getProjectsForUser(userId) {
         let params = {
             TableName: this.configuration.data.dynamodb_projectTable,
@@ -30,12 +44,12 @@ class QueryStore {
                 ':uid': userId,
             },
             KeyConditionExpression: 'userId = :uid',
-            //Limit: 5
+            Limit: 50
         };
         
         let queryResults = await this.dynamoDbClient.query(params).promise();
         let projects = queryResults.Items;
-        console.info(queryResults);
+
         console.info(`Found ${projects.length} items for user`);
         
         // No reason to include the userId in the response. It exists in the table to query by but it should not go with the data.
