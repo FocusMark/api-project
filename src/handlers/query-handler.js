@@ -8,6 +8,7 @@ const Configuration = require('../shared/configuration');
 
 const { QueryFactory } = require('../queries/query-factory');
 const QueryStore = require('../queries/query-store');
+const QueryData = require('../queries/query-data');
 
 let queryFactory = new QueryFactory();
 let queryStore = new QueryStore();
@@ -19,9 +20,11 @@ exports.queryHandler = async (event, context) => {
         
         console.info(`Fetching existing events for User ${user.userId}`);
         let userProjects = await queryStore.getProjectsForUser(user.userId);
-        return new Response(200, userProjects);
+        console.info('Query handler completed');
+        return new QueryData(200, userProjects.projects, null, userProjects.lastProjectId);
         
     } catch(err) {
+        console.info(err);
         return new Response(400, null, `${err.code}: ${err.message}`);
     }
 }
