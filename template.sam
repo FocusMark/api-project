@@ -85,16 +85,16 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_command_post'
-      Handler: src/handlers/command-handler.commandHandler
+      Handler: src/handlers/post-handler.postHandler
       Runtime: nodejs12.x
       MemorySize: 256
-      Timeout: 10
+      Timeout: 90
       Description: HTT POST handler for the /project API endpoint
       Role: !GetAtt postItemFunctionRole.Arn
       Environment:
         Variables:
           deployed_environment: !Ref TargetEnvironment
-          dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
+          dynamodb_projectTable: !Ref ProjectTable
           dynamodb_endpointUrl: ''
           sns_project_topic: !Ref ProjectTopic
       Events:
@@ -112,16 +112,16 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_command_put'
-      Handler: src/handlers/command-handler.commandHandler
+      Handler: src/handlers/put-handler.putHandler
       Runtime: nodejs12.x
       MemorySize: 256
-      Timeout: 10
+      Timeout: 90
       Description: HTT PUT handler for the /project API endpoint
       Role: !GetAtt putItemFunctionRole.Arn
       Environment:
         Variables:
           deployed_environment: !Ref TargetEnvironment
-          dynamodb_projectEventSourceTable: !Ref ProjectEventSourceTable
+          dynamodb_projectTable: !Ref ProjectTable
           dynamodb_endpointUrl: ''
           sns_project_topic: !Ref ProjectTopic
       Events:
@@ -377,7 +377,7 @@ Resources:
               - Effect: Allow
                 Action: 
                   - 'dynamodb:PutItem'
-                Resource: !GetAtt ProjectEventSourceTable.Arn
+                Resource: !GetAtt ProjectTable.Arn
               - Effect: Allow
                 Action: 
                   - 'xray:CreateGroup'
@@ -419,8 +419,7 @@ Resources:
               - Effect: Allow
                 Action: 
                   - 'dynamodb:PutItem'
-                  - 'dynamodb:Query'
-                Resource: !GetAtt ProjectEventSourceTable.Arn
+                Resource: !GetAtt ProjectTable.Arn
               - Effect: Allow
                 Action: 
                   - 'xray:CreateGroup'

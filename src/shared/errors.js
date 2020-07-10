@@ -13,7 +13,7 @@ const Errors = {
     },
     MALFORMED_BODY: {
         code: 4,
-        message: 'field is not supported.'
+        message: 'Did not receive the fields expected.'
     },
     MALFORMED_PROJECT_EVENT: {
         code: 5,
@@ -26,6 +26,10 @@ const Errors = {
     COMMAND_NOT_SUPPORTED: {
         code: 7,
         message: 'The command provided is not supported.'
+    },
+    MALFORMED_JSON_BODY: {
+        code: 8,
+        message: 'The JSON payload was malformed.'
     },
 };
 
