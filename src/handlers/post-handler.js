@@ -42,7 +42,7 @@ function createProject(user, event) {
     
     console.info('Validating Project');
     let validationResults = project.validate();
-    if (validationResults) {
+    if (validationResults === null) {
         console.info('Validation failed.');
         return new Response(422, null, validationResults);
     }
@@ -78,6 +78,7 @@ function handleError(err) {
             return new Response(401, null, err);
         case FMErrors.JSON_MALFORMED.code:
         case FMErrors.JSON_INVALID_FIELDS.code:
+        case FMErrors.JSON_MISSING_FIELDS.code:
             return new Response(422, null, err);
         case AWSErrors.DYNAMO_NEW_PUT_FAILED.code:
             return new Response(500, null, err);

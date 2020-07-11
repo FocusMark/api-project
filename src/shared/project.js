@@ -2,7 +2,7 @@ const { v4: uuidv4 } = require('uuid');
 const validate = require("validate.js");
 const Status = require('../shared/status');
 const Methodologies = require('../shared/methodologies');
-const Errors = require('../shared/errors');
+const { FMErrors } = require('../shared/errors');
 
 class Project {
     constructor(user, viewModel) {
@@ -27,7 +27,7 @@ class Project {
         for(const vmField in viewModel) {
             if (this[vmField] === undefined) {
                 console.info(`Client sent the field ${vmField} which is not allowd on the model.`);
-                throw Errors.JSON_INVALID_FIELDS;
+                throw FMErrors.JSON_INVALID_FIELDS;
             }
         }
         console.info(viewModel);
@@ -41,7 +41,7 @@ class Project {
                 this[field] = viewModel[field];
             } else {
                 console.info(`Client sent a request body with the ${field} field missing.`);
-                throw Errors.JSON_INVALID_FIELDS;
+                throw FMErrors.JSON_MISSING_FIELDS;
             }
         }
     }
