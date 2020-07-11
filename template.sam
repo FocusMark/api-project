@@ -18,7 +18,7 @@ Resources:
   ProjectTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-project_readstore'
+      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-projectstore'
       AttributeDefinitions:
         - AttributeName: userId
           AttributeType: S
@@ -172,7 +172,7 @@ Resources:
   postItemFunctionRole:
     Type: AWS::IAM::Role
     Properties:
-      Description: !Sub 'Allows inserting new records into the ${ProjectEventSourceTable} table'
+      Description: !Sub 'Allows inserting new records into the ${ProjectTable} table'
       RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_post'
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -211,7 +211,7 @@ Resources:
   putItemFunctionRole:
     Type: AWS::IAM::Role
     Properties:
-      Description: !Sub 'Allows inserting new records into the ${ProjectEventSourceTable} table that represent updates to a Project'
+      Description: !Sub 'Allows inserting new records into the ${ProjectTable} table that represent updates to a Project'
       RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_put'
       AssumeRolePolicyDocument:
         Version: 2012-10-17

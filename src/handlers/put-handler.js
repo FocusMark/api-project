@@ -16,10 +16,13 @@ exports.putHandler = async (event, context) => {
         let project = createProject(user, event);
         
         let existingProject = await getProject(project);
+
         if (!existingProject) {
             return new Response(404, null, 'not found');
         }
         
+        // TODO: CreatedAt is being overwritten still.
+        project.createdAt = existingProject.createdAt;
         await saveProject(project);
         let responseViewModel = { projectId: project.projectId };
         return new Response(201, responseViewModel, null, project.projectId);
