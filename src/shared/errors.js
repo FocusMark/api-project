@@ -31,6 +31,10 @@ const AWSErrors = {
         message: 'Failed to update the record'
     },
     DYNAMO_GET_FAILED: {
+        code: 1003,
+        message: 'Failed to retrieve projects',
+    },
+    DYNAMO_GET_FAILED: {
         code: 4041,
         message: 'Not found'
     },

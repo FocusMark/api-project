@@ -1,4 +1,4 @@
-class QueryData {
+class QueryResponse {
 
     constructor(statusCode, data, errors, lastProjectId) {
         let body = {
@@ -38,4 +38,4 @@ class QueryData {
     }
 }
 
-module.exports = QueryData;
+module.exports = QueryResponse;
