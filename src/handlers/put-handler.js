@@ -13,19 +13,17 @@ let dynamoDbClient = new AWS.DynamoDB.DocumentClient();
 exports.putHandler = async (event, context) => {
     try {
         let user = new JwtUser(event);
-        let project = createProject(user, event);
+        let newProject = createProject(user, event);
         
-        let existingProject = await getProject(project);
+        let existingProject = await getProject(newProject);
 
         if (!existingProject) {
             return new Response(404, null, 'not found');
         }
         
-        // TODO: CreatedAt is being overwritten still.
-        project.createdAt = existingProject.createdAt;
-        await saveProject(project);
-        let responseViewModel = { projectId: project.projectId };
-        return new Response(201, responseViewModel, null, project.projectId);
+        await saveProject(existingProject, newProject, user);
+        let responseViewModel = { projectId: newProject.projectId };
+        return new Response(200, responseViewModel, null, newProject.projectId);
     } catch(err) {
         console.info(err);
         console.info('Aborting Lambda execution');
@@ -46,6 +44,7 @@ function createProject(user, event) {
     
     console.info('Validating Project');
     let validationResults = viewModel.validate();
+    console.info(validationResults);
     if (validationResults === null) {
         console.info('Validation failed.');
         return new Response(422, null, validationResults);
@@ -76,19 +75,23 @@ async function getProject(project) {
     }
 }
 
-async function saveProject(project) {
-    console.info(`Persisting Project ${project.projectId} to the data store.`);
-    let newRecord = project;
-    newRecord.updatedAt = Date.now();
-    newRecord.createdAt = Date.now()
+async function saveProject(oldProject, newProject, user) {
+    console.info(`Persisting Project ${newProject.projectId} to the data store.`);
+    let updatedRecord = newProject;
+    updatedRecord.updatedAt = Date.now();
+    updatedRecord.clientsUsed = oldProject.clientsUsed;
+    
+    if (!oldProject.clientsUsed.includes(user.clientId)) {
+        updatedRecord.clientsUsed.push(user.clientId);
+    }
     
     let putParameters = {
         TableName: configuration.data.dynamodb_projectTable,
-        Item: newRecord,
+        Item: updatedRecord,
         ConditionExpression: 'userId = :uid AND projectId = :pid',
         ExpressionAttributeValues: {
-            ':uid': project.userId,
-            ':pid': project.projectId
+            ':uid': user.userId,
+            ':pid': oldProject.projectId
         }
     };
     

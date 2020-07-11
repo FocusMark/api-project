@@ -15,7 +15,7 @@ exports.postHandler = async (event, context) => {
         let user = new JwtUser(event);
         let project = createProject(user, event);
         
-        await saveProject(project);
+        await saveProject(user, project);
         let responseViewModel = { projectId: project.projectId };
         return new Response(201, responseViewModel, null, project.projectId);
     } catch(err) {
@@ -51,11 +51,12 @@ function createProject(user, event) {
     return project;
 }
 
-async function saveProject(project) {
+async function saveProject(user, project) {
     console.info(`Persisting Project ${project.projectId} to the read-only query store.`);
     let newRecord = project;
     newRecord.updatedAt = Date.now();
     newRecord.createdAt = Date.now();
+    newRecord.clientsUsed = [ user.clientId ];
     
     let postParameters = {
         TableName: configuration.data.dynamodb_projectTable,

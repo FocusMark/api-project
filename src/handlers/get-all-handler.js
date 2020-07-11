@@ -12,6 +12,7 @@ let dynamoDbClient = new AWS.DynamoDB.DocumentClient();
 exports.getAllHandler = async (event, context) => {
     try {
         let user = new JwtUser(event);
+        console.info(user);
         let projectResults = await getAllProjects(user);
         return new QueryResponse(200, projectResults.projects, null, projectResults.lastProjectId);
     } catch(err) {
