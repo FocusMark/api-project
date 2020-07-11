@@ -1,36 +1,27 @@
-const Errors = {
-    HTTP_METHOD_NOT_SUPPORTED: {
-        code: 1,
-        message: 'The HTTP method used is not supported'
+const FMErrors = {
+    MISSING_AUTHORIZATION: {
+        code: 4011,
+        message: 'Not authorized'
     },
-    PROJECT_ID_MISSING: {
-        code: 2,
-        message: 'The projectId was not provided in the URL path.'
+    JSON_MALFORMED: {
+        code: 4221,
+        message: 'Json given is malformed.'
     },
-    PROJECT_VALIDATION_FAILED: {
-        code: 3,
-        message: 'Project is not valid'
-    },
-    MALFORMED_BODY: {
-        code: 4,
-        message: 'Did not receive the fields expected.'
-    },
-    MALFORMED_PROJECT_EVENT: {
-        code: 5,
-        message: 'Expected event to contain a valid payload. It did not.'
-    },
-    PROJECT_DOES_NOT_EXIST: {
-        code: 6,
-        message: 'The given project does not exist.'
-    },
-    COMMAND_NOT_SUPPORTED: {
-        code: 7,
-        message: 'The command provided is not supported.'
-    },
-    MALFORMED_JSON_BODY: {
-        code: 8,
-        message: 'The JSON payload was malformed.'
+    JSON_INVALID_FIELDS: {
+        code: 4222,
+        message: 'Invalid field found in the JSON for this request.'
     },
 };
 
-module.exports = Errors;
+const AWSErrors = {
+    DYNAMO_NEW_PUT_FAILED: {
+        code: 1001,
+        message: 'Failed to create the record'
+    },
+    DYNAMO_UPDATE_PUT_FAILED: {
+        code: 1002,
+        message: 'Failed to update the record'
+    },
+}
+
+module.exports = { FMErrors, AWSErrors };

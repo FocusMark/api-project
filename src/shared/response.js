@@ -8,18 +8,18 @@ class Response {
      * @param {createdLocation} - A location header value.
      * 
      */
-    constructor(statusCode, data, errors, createdLocation) {
+    constructor(statusCode, data, error, createdLocation) {
         let body = {
             data: data,
-            errors: errors,
-            isSuccessful: errors ? false : true,
+            error: error,
+            isSuccessful: error ? false : true,
         };
         
         if (!body.data) {
             body.data = {};
         }
-        if (!body.errors) {
-            body.errors = [];
+        if (!body.error) {
+            body.error = {};
         }
         
         this.body = JSON.stringify(body);

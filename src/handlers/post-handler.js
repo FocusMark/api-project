@@ -1,7 +1,7 @@
 let AWSXRay = require('aws-xray-sdk');
 let AWS = AWSXRay.captureAWS(require('aws-sdk'));
 
-const Errors = require('../shared/errors');
+const { FMErrors, AWSErrors } = require('../shared/errors');
 const Response = require('../shared/response');
 const Configuration = require('../shared/configuration');
 const Project = require('../shared/project');
@@ -16,13 +16,12 @@ exports.postHandler = async (event, context) => {
         let project = createProject(user, event);
         
         await saveProject(project);
-        return new Response(201, project, null, project.projectId);
+        let responseViewModel = { projectId: project.projectId };
+        return new Response(201, responseViewModel, null, project.projectId);
     } catch(err) {
         console.info(err);
-        if (err.code === Errors.MALFORMED_BODY.code || err.code === Errors.MALFORMED_JSON_BODY.code) {
-            return new Response(422, null, err.message);
-        }
-        return new Response(500, 'Server failed to process your request.');
+        console.info('Aborting Lambda execution');
+        return handleError(err);
     }
 }
 
@@ -32,7 +31,11 @@ function createProject(user, event) {
     try {
         viewModel = JSON.parse(event.body);
     } catch(err) {
-        throw Errors.MALFORMED_JSON_BODY;
+        throw FMErrors.JSON_MALFORMED;
+    }
+    
+    if (viewModel.projectId || viewModel.userId || viewModel.createdAt || viewModel.updatedAt) {
+        throw FMErrors.JSON_INVALID_FIELDS;
     }
     
     let project = new Project(user, viewModel);
@@ -41,7 +44,7 @@ function createProject(user, event) {
     let validationResults = project.validate();
     if (validationResults) {
         console.info('Validation failed.');
-        return new Response(422, validationResults, 'Validation failed on the given model.');
+        return new Response(422, null, validationResults);
     }
     
     console.info('Validation completed successfully.');
@@ -60,6 +63,25 @@ async function saveProject(project) {
     };
     
     console.info('Writing to table');
-    await dynamoDbClient.put(postParameters).promise();
+    try {
+        await dynamoDbClient.put(postParameters).promise();
+    } catch(err) {
+        console.info(err);
+        throw new AWSErrors.DYNAMO_NEW_PUT_FAILED;
+    }
     console.info('Write complete');
+}
+
+function handleError(err) {
+    switch(err.code) {
+        case FMErrors.MISSING_AUTHORIZATION.code:
+            return new Response(401, null, err);
+        case FMErrors.JSON_MALFORMED.code:
+        case FMErrors.JSON_INVALID_FIELDS.code:
+            return new Response(422, null, err);
+        case AWSErrors.DYNAMO_NEW_PUT_FAILED.code:
+            return new Response(500, null, err);
+    }
+    
+    return new Response(500, 'Server failed to process your request.');
 }

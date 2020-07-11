@@ -27,7 +27,7 @@ class Project {
         for(const vmField in viewModel) {
             if (this[vmField] === undefined) {
                 console.info(`Client sent the field ${vmField} which is not allowd on the model.`);
-                throw Errors.MALFORMED_BODY;
+                throw Errors.JSON_INVALID_FIELDS;
             }
         }
         console.info(viewModel);
@@ -40,7 +40,8 @@ class Project {
                 console.info(`Mapping field '${field}' to Project`);
                 this[field] = viewModel[field];
             } else {
-                throw Errors.MALFORMED_BODY;
+                console.info(`Client sent a request body with the ${field} field missing.`);
+                throw Errors.JSON_INVALID_FIELDS;
             }
         }
     }
