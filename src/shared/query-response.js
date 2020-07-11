@@ -1,6 +1,6 @@
 class QueryResponse {
 
-    constructor(statusCode, data, errors, lastProjectId) {
+    constructor(statusCode, data, errors, lastId) {
         let body = {
             data: data,
             errors: errors,
@@ -15,12 +15,12 @@ class QueryResponse {
         }
         
         body.pagination = {};
-        if (lastProjectId) {
-            body.pagination.lastProjectId = lastProjectId;
+        if (lastId) {
+            body.pagination.lastId = lastId;
             body.pagination.additionalDataAvailable = true;
         } else {
             body.pagination.additionalDataAvailable = false;
-            body.pagination.lastProjectId = "None";
+            body.pagination.lastId = "None";
         }
         
         if (Array.isArray(data)) {

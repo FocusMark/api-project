@@ -6,9 +6,7 @@
     "dependencies": {
         "aws-sdk": "^2.683.0",
         "aws-xray-sdk": "^3.0.1",
-        "jsonschema": "^1.2.6",
-        "uuid": "^8.1.0",
-        "validate.js": "^0.13.1"
+        "uuid": "^8.1.0"
     },
     "devDependencies": {
         "aws-sdk-mock": "^5.1.0",

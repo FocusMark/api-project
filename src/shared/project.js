@@ -1,8 +1,10 @@
 const { v4: uuidv4 } = require('uuid');
-const validate = require("validate.js");
-const Status = require('../shared/status');
-const Methodologies = require('../shared/methodologies');
-const { FMErrors } = require('../shared/errors');
+const Status = require('./shared/status');
+const Methodologies = require('./shared/methodologies');
+const { FMErrors } = require('./shared/errors');
+
+const MAX_TITLE_LENGTH = 100;
+const MIN_TITLE_LENGTH = 3;
 
 class Project {
     constructor(user, viewModel) {
@@ -20,7 +22,9 @@ class Project {
         this.targetDate = null;
         this.startDate = null;
         
-        this.mapViewModel(viewModel);
+        if (viewModel) {
+            this.mapViewModel(viewModel);
+        }
     }
     
     mapViewModel(viewModel) {
@@ -47,73 +51,35 @@ class Project {
     }
     
     validate() {
-        let constraints = this.createValidationConstraints();
-        let validationResult = validate(this, constraints);
-        return validationResult;
+        this.validateTitle();
+        this.validateStatus();
+        this.validateKind();
     }
     
-    createValidationConstraints() {
-        return {
-            title: this.createTitleValidator(),
-            userId: this.createUserValidator(),
-            status: this.createStatusValidator(),
-            kind: this.createMethodologyKindValidator(),
+    validateTitle() {
+        if (this.title || this.title.length > MAX_TITLE_LENGTH || this.title.length < MIN_TITLE_LENGTH) {
+            throw FMErrors.PROJECT_TITLE_VALIDATION_FAILED;
         }
     }
     
-    createTitleValidator() {
-        return {
-            presence: { allowEmpty: false },
-            length: { 
-                minimum: 1, 
-                maximum: 100,
-                message: 'Must be at least 6 characters in length and no more than 100'
-            },
-            type: 'string'
-        };
-    }
-    
-    createStatusValidator() {
-        // Construct a list of all allowed Status from the object itself and constrain to that list.
-        let allowedStatus = [];
-        for(const property in Status) {
-            let value = Status[property];
-            allowedStatus.push(value);
-        }
-        
-        return {
-            presence: { allowEmpty: false },
-            type: 'string',
-            inclusion: { 
-                within: allowedStatus, 
-                message: "'%{value}' is not allowed"
+    validateStatus() {
+        for(const item in Status) {
+            if (this.status === Status[item]) {
+                return;
             }
         }
+        
+        throw FMErrors.PROJECT_STATUS_VALIDATION_FAILED;
     }
     
-    createMethodologyKindValidator() {
-        // Construct a list of all allowed Status from the object itself and constrain to that list.
-        let allowedKind = [];
-        for(const property in Methodologies) {
-            let value = Methodologies[property];
-            allowedKind.push(value);
-        }
-        
-        return {
-            presence: { allowEmpty: false },
-            type: 'string',
-            inclusion: { 
-                within: allowedKind, 
-                message: "'%{value}' is not allowed"
+    validateKind() {
+        for(const item in Methodologies) {
+            if (this.status === Methodologies[item]) {
+                return;
             }
         }
-    }
-    
-    createUserValidator() {
-        return {
-            presence: { allowEmpty: false },
-            type: 'string'
-        }
+        
+        throw FMErrors.PROJECT_KIND_VALIDATION_FAILED;
     }
 }
 

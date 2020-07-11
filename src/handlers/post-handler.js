@@ -23,7 +23,7 @@ exports.postHandler = async (event, context) => {
         console.info('Aborting Lambda execution');
         return handleError(err);
     }
-}
+};
 
 function createProject(user, event) {
     console.info('Creating Project from request');
@@ -41,11 +41,7 @@ function createProject(user, event) {
     let project = new Project(user, viewModel);
     
     console.info('Validating Project');
-    let validationResults = project.validate();
-    if (validationResults === null) {
-        console.info('Validation failed.');
-        return new Response(422, null, validationResults);
-    }
+    project.validate();
     
     console.info('Validation completed successfully.');
     return project;
@@ -80,6 +76,9 @@ function handleError(err) {
         case FMErrors.JSON_MALFORMED.code:
         case FMErrors.JSON_INVALID_FIELDS.code:
         case FMErrors.JSON_MISSING_FIELDS.code:
+        case FMErrors.PROJECT_TITLE_VALIDATION_FAILED.code:
+        case FMErrors.PROJECT_STATUS_VALIDATION_FAILED.code:
+        case FMErrors.PROJECT_KIND_VALIDATION_FAILED.code:
             return new Response(422, null, err);
         case AWSErrors.DYNAMO_NEW_PUT_FAILED.code:
             return new Response(500, null, err);

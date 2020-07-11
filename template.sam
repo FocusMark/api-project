@@ -140,32 +140,31 @@ Resources:
             RestApiId:
               Ref: ProjectApi
               
-  # getByIdFunction:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     Handler: src/handlers/query-handler.queryHandler
-  #     FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_query_Id'
-  #     Runtime: nodejs12.x
-  #     MemorySize: 256
-  #     Timeout: 100
-  #     Description: HTTP GET handler for the /project/{projectId} API endpoint to retrieve a specific Project for a user.
-  #     Role: !GetAtt getByIdFunctionRole.Arn
-  #     Environment:
-  #       Variables:
-  #         deployed_environment: !Ref TargetEnvironment
-  #         dynamodb_projectTable: !Ref ProjectTable
-  #         dynamodb_endpointUrl: ''
-  #         sns_project_topic: !Ref ProjectTopic
-  #     Events:
-  #       Api:
-  #         Type: Api
-  #         Properties:
-  #           Auth:
-  #             Authorizer: ApiGetProjectAuthorizer
-  #           Path: /{projectId}
-  #           Method: GET
-  #           RestApiId:
-  #             Ref: ProjectApi
+  getItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/get-item-handler.getItemHandler
+      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_getitem'
+      Runtime: nodejs12.x
+      MemorySize: 256
+      Timeout: 100
+      Description: HTTP GET handler for the /project/{projectId} API endpoint to retrieve a specific Project for a user.
+      Role: !GetAtt getItemFunctionRole.Arn
+      Environment:
+        Variables:
+          deployed_environment: !Ref TargetEnvironment
+          dynamodb_projectTable: !Ref ProjectTable
+          dynamodb_endpointUrl: ''
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Auth:
+              Authorizer: ApiGetProjectAuthorizer
+            Path: /{projectId}
+            Method: GET
+            RestApiId:
+              Ref: ProjectApi
         
   # IAM Role used by the Lambda for handling HTTP POST requests that create projects.
   postItemFunctionRole:
@@ -250,7 +249,7 @@ Resources:
   getAllItemsFunctionRole:
     Type: AWS::IAM::Role
     Properties:
-      Description: !Sub 'Allows inserting new records into the ${ProjectTable} table that represent updates to a Project'
+      Description: !Sub 'Allows querying records from the ${ProjectTable} table that represent a Project'
       RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_getall'
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -269,6 +268,45 @@ Resources:
               - Effect: Allow
                 Action: 
                   - 'dynamodb:Query'
+                Resource: !GetAtt ProjectTable.Arn
+              - Effect: Allow
+                Action: 
+                  - 'xray:CreateGroup'
+                  - 'xray:CreateSamplingRule'
+                Resource: 
+                  - 'arn:aws:xray:*:*:group/*/*'
+                  - 'arn:aws:xray:*:*:sampling-rule/*'
+              - Effect: Allow
+                Action:
+                  - 'xray:PutTelemetryRecords'
+                  - 'xray:PutTraceSegments'
+                Resource: '*'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        
+  # IAM Role used by the Lambda for handling HTTP POST requests that create projects.
+  getItemFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: !Sub 'Allows getting a single record from the ${ProjectTable} table that represent a Project'
+      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_getitem'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_getitem'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 'dynamodb:GetItem'
                 Resource: !GetAtt ProjectTable.Arn
               - Effect: Allow
                 Action: 

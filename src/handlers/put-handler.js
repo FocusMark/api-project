@@ -29,7 +29,7 @@ exports.putHandler = async (event, context) => {
         console.info('Aborting Lambda execution');
         return handleError(err);
     }
-}
+};
 
 function createProject(user, event) {
     console.info('Updating Project from request');
@@ -37,18 +37,13 @@ function createProject(user, event) {
     viewModel = new Project(user, JSON.parse(event.body));
     
     if (!event.pathParameters || !event.pathParameters.projectId) {
-        throw FMErrors.INVALID_ROUTE
+        throw FMErrors.INVALID_ROUTE;
     }
     
     viewModel.projectId = event.pathParameters.projectId;
     
     console.info('Validating Project');
-    let validationResults = viewModel.validate();
-    console.info(validationResults);
-    if (validationResults === null) {
-        console.info('Validation failed.');
-        return new Response(422, null, validationResults);
-    }
+    viewModel.validate();
     
     console.info('Validation completed successfully.');
     return viewModel;
@@ -71,7 +66,7 @@ async function getProject(project) {
         }
     } catch(err) {
         console.info(err);
-        throw AWSErrors.DYNAMO_GET_FAILED;
+        throw AWSErrors.DYNAMO_GET_PROJECT_FAILED;
     }
 }
 
@@ -112,12 +107,15 @@ function handleError(err) {
         case FMErrors.JSON_MALFORMED.code:
         case FMErrors.JSON_INVALID_FIELDS.code:
         case FMErrors.JSON_MISSING_FIELDS.code:
+        case FMErrors.PROJECT_TITLE_VALIDATION_FAILED.code:
+        case FMErrors.PROJECT_STATUS_VALIDATION_FAILED.code:
+        case FMErrors.PROJECT_KIND_VALIDATION_FAILED.code:
             return new Response(422, null, err);
         case FMErrors.INVALID_ROUTE.code:
             return new Response(404, null, err);
         case AWSErrors.DYNAMO_UPDATE_PUT_FAILED.code:
             return new Response(500, null, err);
-        case AWSErrors.DYNAMO_GET_FAILED.code:
+        case AWSErrors.DYNAMO_GET_PROJECT_FAILED.code:
             return new Response(404, null, err);
     }
     
