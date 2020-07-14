@@ -32,6 +32,13 @@ Resources:
       ProvisionedThroughput: 
         ReadCapacityUnits: 2
         WriteCapacityUnits: 2
+        
+  # SNS Topic used for publishing events as side-effects to Commands.     
+  ProjectTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Sub 'focusmark-${TargetEnvironment}-sns-project'
+      TopicName: !Sub 'focusmark-${TargetEnvironment}-sns-project'
 
   # API Gateway used by the Project API.
   # Auth setup example from https://github.com/awslabs/serverless-application-model/blob/master/examples/2016-10-31/api_cognito_auth/template.yaml
@@ -77,6 +84,7 @@ Resources:
           deployed_environment: !Ref TargetEnvironment
           dynamodb_projectTable: !Ref ProjectTable
           dynamodb_endpointUrl: ''
+          sns_project_topic: !Ref ProjectTopic
       Events:
         Api:
           Type: Api
@@ -103,6 +111,7 @@ Resources:
           deployed_environment: !Ref TargetEnvironment
           dynamodb_projectTable: !Ref ProjectTable
           dynamodb_endpointUrl: ''
+          sns_project_topic: !Ref ProjectTopic
       Events:
         Api:
           Type: Api
@@ -187,6 +196,9 @@ Resources:
             Version: 2012-10-17
             Statement:
               - Effect: Allow
+                Action: 'sns:Publish'
+                Resource: !Ref ProjectTopic
+              - Effect: Allow
                 Action: 
                   - 'dynamodb:PutItem'
                 Resource: !GetAtt ProjectTable.Arn
@@ -225,6 +237,9 @@ Resources:
           PolicyDocument:
             Version: 2012-10-17
             Statement:
+              - Effect: Allow
+                Action: 'sns:Publish'
+                Resource: !Ref ProjectTopic
               - Effect: Allow
                 Action: 
                   - 'dynamodb:PutItem'
@@ -332,3 +347,8 @@ Outputs:
     Value: !Ref ProjectApi
     Export:
       Name: !Sub 'focusmark-${TargetEnvironment}-apigateway-project'
+  ProjectTopic:
+    Description: "SNS Topic for publishing notifications related to Projects"
+    Value: !Ref ProjectTopic
+    Export:
+      Name: !Sub "focusmark-${TargetEnvironment}-sns-ProjectTopic"

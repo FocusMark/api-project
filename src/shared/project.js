@@ -1,7 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
-const Status = require('./shared/status');
-const Methodologies = require('./shared/methodologies');
-const { FMErrors } = require('./shared/errors');
+const Status = require('../shared/status');
+const Methodologies = require('../shared/methodologies');
+const { FMErrors } = require('../shared/errors');
 
 const MAX_TITLE_LENGTH = 100;
 const MIN_TITLE_LENGTH = 3;
@@ -51,9 +51,9 @@ class Project {
     }
     
     validate() {
-        this.validateTitle();
-        this.validateStatus();
-        this.validateKind();
+        // this.validateTitle();
+        // this.validateStatus();
+        // this.validateKind();
     }
     
     validateTitle() {

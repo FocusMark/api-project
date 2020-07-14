@@ -26,16 +26,31 @@ exports.getAllHandler = async (event, context) => {
 
 async function getAllProjects(user, filter) {
     console.info(`Querying all projects for user`);
-    console.info(filter);
+    // TODO: Param parsing/filtering is broken.
+    // let params = {
+    //     TableName: configuration.data.dynamodb_projectTable,
+    //     ExpressionAttributeValues: filter.attributeValues,
+    //     KeyConditionExpression: filter.conditionExpression,
+    //     Limit: 50
+    // };
+    
+    // if (Object.keys(filter.attributeNames).length !== 0) {
+    //     params.ExpressionAttributeValues = filter.attributeNames;
+    // }
+    // if (Object.keys(filter.filterExpression).length !== 0) {
+    //     params.FilterExpression = filter.filterExpression;
+    // }
+    
     let params = {
         TableName: configuration.data.dynamodb_projectTable,
-        ExpressionAttributeValues: filter.attributeValues,
-        KeyConditionExpression: filter.conditionExpression,
-        ExpressionAttributeNames: filter.attributeNames,
-        FilterExpression: filter.filterExpression,
+        ExpressionAttributeValues: {
+            ':uid': user.userId,
+        },
+        KeyConditionExpression: 'userId = :uid',
         Limit: 50
     };
     
+    console.info(params);
     try {
         let queryResults = await dynamoDbClient.query(params).promise();
         let projects = queryResults.Items;
@@ -60,7 +75,7 @@ function parseQueryFilter(user, event) {
         ':uid': user.userId,
     };
     let attributeNames = {};
-    let filterExpression = '';
+    let filterExpression = ':uid = userId'
     let project = new Project(user, null);
     
     // We don't support filtering by these fields.
