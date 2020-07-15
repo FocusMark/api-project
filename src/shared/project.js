@@ -52,8 +52,8 @@ class Project {
     
     validate() {
         this.validateTitle();
-        // this.validateStatus();
-        // this.validateKind();
+        this.validateStatus();
+        this.validateKind();
     }
     
     validateTitle() {
