@@ -13,9 +13,8 @@ let dynamoDbClient = new AWS.DynamoDB.DocumentClient();
 exports.getAllHandler = async (event, context) => {
     try {
         let user = new JwtUser(event);
-        let queryFilter = parseQueryFilter(user, event);
 
-        let projectResults = await getAllProjects(user, queryFilter);
+        let projectResults = await getAllProjects(event, user);
         return new QueryResponse(200, projectResults.projects, null, projectResults.lastProjectId);
     } catch(err) {
         console.info(err);
@@ -24,22 +23,8 @@ exports.getAllHandler = async (event, context) => {
     }
 };
 
-async function getAllProjects(user, filter) {
+async function getAllProjects(event, user) {
     console.info(`Querying all projects for user`);
-    // TODO: Param parsing/filtering is broken.
-    // let params = {
-    //     TableName: configuration.data.dynamodb_projectTable,
-    //     ExpressionAttributeValues: filter.attributeValues,
-    //     KeyConditionExpression: filter.conditionExpression,
-    //     Limit: 50
-    // };
-    
-    // if (Object.keys(filter.attributeNames).length !== 0) {
-    //     params.ExpressionAttributeValues = filter.attributeNames;
-    // }
-    // if (Object.keys(filter.filterExpression).length !== 0) {
-    //     params.FilterExpression = filter.filterExpression;
-    // }
     
     let params = {
         TableName: configuration.data.dynamodb_projectTable,
@@ -47,8 +32,16 @@ async function getAllProjects(user, filter) {
             ':uid': user.userId,
         },
         KeyConditionExpression: 'userId = :uid',
-        Limit: 50
+        Limit: 20,
+        ReturnConsumedCapacity: "TOTAL",
     };
+    
+    if (event.queryStringParameters && event.queryStringParameters.lastId) {
+        params.ExclusiveStartKey = {
+            projectId: event.queryStringParameters.lastId,
+            userId: user.userId,
+        };
+    }
     
     console.info(params);
     try {
@@ -57,6 +50,7 @@ async function getAllProjects(user, filter) {
         projects.forEach(project => deletePrivateFields(project));
         
         console.info(`Query completed with ${queryResults.Items.length} items found`);
+        
         if (queryResults.LastEvaluatedKey) {
             console.info('Additional records are available for querying in DynamoDB.');
             return { projects: projects, lastProjectId: queryResults.LastEvaluatedKey.projectId, };
@@ -68,38 +62,6 @@ async function getAllProjects(user, filter) {
         console.info(err);
         throw AWSErrors.DYNAMO_GET_ALL_PROJECTS_FAILED;
     }
-}
-
-function parseQueryFilter(user, event) {
-    let attributeValues = {
-        ':uid': user.userId,
-    };
-    let attributeNames = {};
-    let filterExpression = ':uid = userId'
-    let project = new Project(user, null);
-    
-    // We don't support filtering by these fields.
-    deletePrivateFields(project);
-    delete project.startDate;
-    delete project.targetDate;
-    
-    for(const filter in event.queryStringParameters) {
-        if (project[filter] !== undefined) {
-            // Use the projectId of the temporary project created above to ensure unique attribute names
-            // This avoids conflicts with reserved attribute keywords in Dynamo, such as the 'status' keyword.
-            let attribute = `fm${filter}`;
-            
-            attributeValues[`:${attribute}`] = event.queryStringParameters[filter];
-            attributeNames[`#${attribute}`] = filter;
-            if (filterExpression === '') {
-                filterExpression = filterExpression + `#${attribute} = :${attribute}`;
-            } else {
-                filterExpression = filterExpression + ` AND #${attribute} = :${attribute}`;
-            } 
-        }
-    }
-    
-    return { attributeValues: attributeValues, attributeNames: attributeNames, filterExpression: filterExpression };
 }
 
 function deletePrivateFields(project) {
@@ -117,5 +79,5 @@ function handleError(err) {
             return new QueryResponse(500, null, err);
     }
     
-    return new QueryResponse(500, 'Server failed to process your request.');
+    return new QueryResponse(500, null, 'Server failed to process your request.');
 }

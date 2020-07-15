@@ -30,11 +30,12 @@ async function getProject(userId, projectId) {
     let params = {
         TableName: configuration.data.dynamodb_projectTable,
         Key: { userId: userId, projectId: projectId },
+        ReturnConsumedCapacity: "TOTAL",
     };
     
     try {
         let fetchedProject = await dynamoDbClient.get(params).promise();
-        
+        console.info(fetchedProject);
         if (Object.keys(fetchedProject).length === 0 || Object.keys(fetchedProject.Item).length == 0) {
             console.info('Project does not exist and can not be updated');
             return null;

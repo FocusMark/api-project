@@ -51,13 +51,13 @@ class Project {
     }
     
     validate() {
-        // this.validateTitle();
+        this.validateTitle();
         // this.validateStatus();
         // this.validateKind();
     }
     
     validateTitle() {
-        if (this.title || this.title.length > MAX_TITLE_LENGTH || this.title.length < MIN_TITLE_LENGTH) {
+        if (!this.title || this.title.length > MAX_TITLE_LENGTH || this.title.length < MIN_TITLE_LENGTH) {
             throw FMErrors.PROJECT_TITLE_VALIDATION_FAILED;
         }
     }
