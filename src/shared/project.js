@@ -74,7 +74,9 @@ class Project {
     
     validateKind() {
         for(const item in Methodologies) {
-            if (this.status === Methodologies[item]) {
+            console.info(this);
+            console.info(`Comparing the current value of ${this.kind} to ${Methodologies[item]}`);
+            if (this.kind === Methodologies[item]) {
                 return;
             }
         }
