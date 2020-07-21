@@ -61,7 +61,7 @@ async function getProject(project) {
             console.info('Project does not exist and can not be updated');
             return null;
         } else {
-            console.info('Verified project exists');
+            console.info('Verified project exists.');
             return fetchedProject.Item;
         }
     } catch(err) {

@@ -72,6 +72,7 @@ function deletePrivateFields(project) {
 }
 
 function handleError(err) {
+    
     switch(err.code) {
         case FMErrors.MISSING_AUTHORIZATION.code:
             return new QueryResponse(401, null, err);
@@ -79,5 +80,5 @@ function handleError(err) {
             return new QueryResponse(500, null, err);
     }
     
-    return new QueryResponse(500, null, 'Server failed to process your request.');
+    return new QueryResponse(500, null, { code: 500, message: 'Server failed to process your request.' });
 }

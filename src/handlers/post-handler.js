@@ -70,6 +70,7 @@ async function saveProject(user, project) {
 }
 
 function handleError(err) {
+    
     switch(err.code) {
         case FMErrors.MISSING_AUTHORIZATION.code:
             return new Response(401, null, err);
@@ -84,5 +85,5 @@ function handleError(err) {
             return new Response(500, null, err);
     }
     
-    return new Response(500, 'Server failed to process your request.');
+    return new Response(500, { code: 500, message: 'Server failed to process your request.' });
 }
