@@ -6,9 +6,11 @@ const Response = require('../shared/response');
 const Configuration = require('../shared/configuration');
 const Project = require('../shared/project');
 const JwtUser = require('../shared/jwt-user');
+const EventService = require('../shared/event-service');
 
 let configuration = new Configuration();
 let dynamoDbClient = new AWS.DynamoDB.DocumentClient();
+let eventService = new EventService();
 
 exports.putHandler = async (event, context) => {
     try {
@@ -22,6 +24,8 @@ exports.putHandler = async (event, context) => {
         }
         
         await saveProject(existingProject, newProject, user);
+        await eventService.publishProjectUpdated(newProject);
+        
         let responseViewModel = { projectId: newProject.projectId };
         return new Response(200, responseViewModel, null, newProject.projectId);
     } catch(err) {

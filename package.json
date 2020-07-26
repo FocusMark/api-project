@@ -4,18 +4,22 @@
     "version": "0.0.1",
     "private": true,
     "dependencies": {
-        "aws-sdk": "^2.683.0",
-        "aws-xray-sdk": "^3.0.1",
-        "uuid": "^8.1.0"
+        "aws-sdk": "^2.720.0",
+        "aws-xray-sdk": "^3.1.0",
+        "uuid": "^8.2.0"
     },
     "devDependencies": {
         "aws-sdk-mock": "^5.1.0",
         "chai": "^4.2.0",
-        "jest": "^24.7.1",
-        "mocha": "^6.1.4",
+        "jest": "^26.1.0",
+        "mocha": "^8.0.1",
         "sinon": "^9.0.2"
     },
+    "// scripts notes": {
+        "install": "This script runs after an npm install command to update all files that are 30 years or more older. SAM uses webpack and uglify-js which has corrupt file dates in a recent version. This causes SAM deployments to fail."
+    },
     "scripts": {
-        "test": "jest"
+        "test": "jest",
+        "install": "find ./node_modules/* -mtime +10950 -exec touch {} \\;"
     }
 }
