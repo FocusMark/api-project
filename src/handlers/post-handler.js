@@ -52,7 +52,7 @@ function createProject(user, event) {
 }
 
 async function saveProject(user, project) {
-    console.info(`Persisting Project ${project.projectId} to the read-only query store.`);
+    console.info(`Persisting Project ${project.projectId} to the data store.`);
     let newRecord = project;
     newRecord.updatedAt = Date.now();
     newRecord.createdAt = Date.now();
