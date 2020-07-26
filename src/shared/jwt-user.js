@@ -33,9 +33,11 @@ class JwtUser {
         let buffer = Buffer.from(userData, 'base64');
         let json = buffer.toString('utf8');
         let user = JSON.parse(json);
-        
+
         this.userId = user.sub;
         this.username = user.username;
+        this.clientId = user.client_id;
+        this.scopes = user.scope.split(' ');
         } catch(err) {
             throw Errors.MISSING_AUTHORIZATION;
         }

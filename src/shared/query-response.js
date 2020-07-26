@@ -1,26 +1,26 @@
-class QueryData {
+class QueryResponse {
 
-    constructor(statusCode, data, errors, lastProjectId) {
+    constructor(statusCode, data, errors, lastId) {
         let body = {
             data: data,
-            errors: errors,
+            error: errors,
             isSuccessful: errors ? false : true,
         };
         
         if (!body.data) {
             body.data = {};
         }
-        if (!body.errors) {
-            body.errors = [];
+        if (!body.error) {
+            body.error = {}
         }
         
         body.pagination = {};
-        if (lastProjectId) {
-            body.pagination.lastProjectId = lastProjectId;
+        if (lastId) {
+            body.pagination.lastId = lastId;
             body.pagination.additionalDataAvailable = true;
         } else {
             body.pagination.additionalDataAvailable = false;
-            body.pagination.lastProjectId = "None";
+            body.pagination.lastId = "None";
         }
         
         if (Array.isArray(data)) {
@@ -38,4 +38,4 @@ class QueryData {
     }
 }
 
-module.exports = QueryData;
+module.exports = QueryResponse;

@@ -6,16 +6,20 @@ const Response = require('../shared/response');
 const Configuration = require('../shared/configuration');
 const Project = require('../shared/project');
 const JwtUser = require('../shared/jwt-user');
+const EventService = require('../shared/event-service');
 
 let configuration = new Configuration();
 let dynamoDbClient = new AWS.DynamoDB.DocumentClient();
+let eventService = new EventService();
 
 exports.postHandler = async (event, context) => {
     try {
         let user = new JwtUser(event);
         let project = createProject(user, event);
         
-        await saveProject(project);
+        await saveProject(user, project);
+        await eventService.publishProjectCreated(project);
+        
         let responseViewModel = { projectId: project.projectId };
         return new Response(201, responseViewModel, null, project.projectId);
     } catch(err) {
@@ -23,7 +27,7 @@ exports.postHandler = async (event, context) => {
         console.info('Aborting Lambda execution');
         return handleError(err);
     }
-}
+};
 
 function createProject(user, event) {
     console.info('Creating Project from request');
@@ -41,21 +45,18 @@ function createProject(user, event) {
     let project = new Project(user, viewModel);
     
     console.info('Validating Project');
-    let validationResults = project.validate();
-    if (validationResults) {
-        console.info('Validation failed.');
-        return new Response(422, null, validationResults);
-    }
+    project.validate();
     
     console.info('Validation completed successfully.');
     return project;
 }
 
-async function saveProject(project) {
-    console.info(`Persisting Project ${project.projectId} to the read-only query store.`);
+async function saveProject(user, project) {
+    console.info(`Persisting Project ${project.projectId} to the data store.`);
     let newRecord = project;
     newRecord.updatedAt = Date.now();
     newRecord.createdAt = Date.now();
+    newRecord.clientsUsed = [ user.clientId ];
     
     let postParameters = {
         TableName: configuration.data.dynamodb_projectTable,
@@ -73,15 +74,20 @@ async function saveProject(project) {
 }
 
 function handleError(err) {
+    
     switch(err.code) {
         case FMErrors.MISSING_AUTHORIZATION.code:
             return new Response(401, null, err);
         case FMErrors.JSON_MALFORMED.code:
         case FMErrors.JSON_INVALID_FIELDS.code:
+        case FMErrors.JSON_MISSING_FIELDS.code:
+        case FMErrors.PROJECT_TITLE_VALIDATION_FAILED.code:
+        case FMErrors.PROJECT_STATUS_VALIDATION_FAILED.code:
+        case FMErrors.PROJECT_KIND_VALIDATION_FAILED.code:
             return new Response(422, null, err);
         case AWSErrors.DYNAMO_NEW_PUT_FAILED.code:
             return new Response(500, null, err);
     }
     
-    return new Response(500, 'Server failed to process your request.');
+    return new Response(500, { code: 500, message: 'Server failed to process your request.' });
 }

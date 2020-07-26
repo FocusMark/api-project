@@ -1,56 +1,56 @@
 let AWSXRay = require('aws-xray-sdk');
 let AWS = AWSXRay.captureAWS(require('aws-sdk'));
 
-const Errors = require('../shared/errors');
+const { FMErrors, AWSErrors } = require('../shared/errors');
 const Response = require('../shared/response');
 const Configuration = require('../shared/configuration');
 const Project = require('../shared/project');
 const JwtUser = require('../shared/jwt-user');
+const EventService = require('../shared/event-service');
 
 let configuration = new Configuration();
 let dynamoDbClient = new AWS.DynamoDB.DocumentClient();
+let eventService = new EventService();
 
 exports.putHandler = async (event, context) => {
     try {
         let user = new JwtUser(event);
+        let newProject = createProject(user, event);
         
-        let project = createProject(user, event);
-        let existingProject = await getProject(project);
+        let existingProject = await getProject(newProject);
+
         if (!existingProject) {
-            return new Response(422, null, 'not found');
+            return new Response(404, null, 'not found');
         }
         
-        await saveProject(project);
-        return new Response(201, project, null, project.projectId);
+        await saveProject(existingProject, newProject, user);
+        await eventService.publishProjectUpdated(newProject);
+        
+        let responseViewModel = { projectId: newProject.projectId };
+        return new Response(200, responseViewModel, null, newProject.projectId);
     } catch(err) {
         console.info(err);
-        if (err.code === Errors.MALFORMED_BODY.code || err.code === Errors.MALFORMED_JSON_BODY.code) {
-            return new Response(422, null, err.message);
-        }
-        return new Response(500, 'Server failed to process your request.');
+        console.info('Aborting Lambda execution');
+        return handleError(err);
     }
-}
+};
 
 function createProject(user, event) {
     console.info('Updating Project from request');
-    let project; 
-    try {
-        project = new Project(user, JSON.parse(event.body));
-    } catch(err) {
-        throw Errors.MALFORMED_JSON_BODY;
+    let viewModel; 
+    viewModel = new Project(user, JSON.parse(event.body));
+    
+    if (!event.pathParameters || !event.pathParameters.projectId) {
+        throw FMErrors.INVALID_ROUTE;
     }
     
-    project.projectId = event.pathParameters.projectId;
+    viewModel.projectId = event.pathParameters.projectId;
     
     console.info('Validating Project');
-    let validationResults = project.validate();
-    if (validationResults === null) {
-        console.info('Validation failed.');
-        return new Response(422, validationResults, 'Validation failed on the given model.');
-    }
+    viewModel.validate();
     
     console.info('Validation completed successfully.');
-    return project;
+    return viewModel;
 }
 
 async function getProject(project) {
@@ -59,34 +59,69 @@ async function getProject(project) {
         Key: { userId: project.userId, projectId: project.projectId },
     };
     
-    let fetchedProject = await dynamoDbClient.get(params).promise();
-    if (Object.keys(fetchedProject).length === 0 || Object.keys(fetchedProject.Item).length == 0) {
-        console.info('Project does not exist and can not be updated');
-        return null;
-    } else {
-        console.info('Verified project exists');
-        return fetchedProject.Item;
+    try {
+        let fetchedProject = await dynamoDbClient.get(params).promise();
+        if (Object.keys(fetchedProject).length === 0 || Object.keys(fetchedProject.Item).length == 0) {
+            console.info('Project does not exist and can not be updated');
+            return null;
+        } else {
+            console.info('Verified project exists.');
+            return fetchedProject.Item;
+        }
+    } catch(err) {
+        console.info(err);
+        throw AWSErrors.DYNAMO_GET_PROJECT_FAILED;
     }
 }
 
-async function saveProject(project) {
-    console.info(`Persisting Project ${project.projectId} to the data store.`);
-    let newRecord = project;
-    newRecord.updatedAt = Date.now();
-    newRecord.createdAt = Date.now()
+async function saveProject(oldProject, newProject, user) {
+    console.info(`Persisting Project ${newProject.projectId} to the data store.`);
+    let updatedRecord = newProject;
+    updatedRecord.updatedAt = Date.now();
+    updatedRecord.clientsUsed = oldProject.clientsUsed;
     
-    let postParameters = {
+    if (!oldProject.clientsUsed.includes(user.clientId)) {
+        updatedRecord.clientsUsed.push(user.clientId);
+    }
+    
+    let putParameters = {
         TableName: configuration.data.dynamodb_projectTable,
-        Item: newRecord,
+        Item: updatedRecord,
         ConditionExpression: 'userId = :uid AND projectId = :pid',
         ExpressionAttributeValues: {
-            ':uid': project.userId,
-            ':pid': project.projectId
+            ':uid': user.userId,
+            ':pid': oldProject.projectId
         }
     };
     
     console.info('Writing to table');
-    let result = await dynamoDbClient.put(postParameters).promise();
-    console.info(result);
+    try {
+        await dynamoDbClient.put(putParameters).promise();
+    } catch(err) {
+        console.info(err);
+        throw new AWSErrors.DYNAMO_UPDATE_PUT_FAILED;
+    }
     console.info('Write complete');
+}
+
+function handleError(err) {
+    switch(err.code) {
+        case FMErrors.MISSING_AUTHORIZATION.code:
+            return new Response(401, null, err);
+        case FMErrors.JSON_MALFORMED.code:
+        case FMErrors.JSON_INVALID_FIELDS.code:
+        case FMErrors.JSON_MISSING_FIELDS.code:
+        case FMErrors.PROJECT_TITLE_VALIDATION_FAILED.code:
+        case FMErrors.PROJECT_STATUS_VALIDATION_FAILED.code:
+        case FMErrors.PROJECT_KIND_VALIDATION_FAILED.code:
+            return new Response(422, null, err);
+        case FMErrors.INVALID_ROUTE.code:
+            return new Response(404, null, err);
+        case AWSErrors.DYNAMO_UPDATE_PUT_FAILED.code:
+            return new Response(500, null, err);
+        case AWSErrors.DYNAMO_GET_PROJECT_FAILED.code:
+            return new Response(404, null, err);
+    }
+    
+    return new Response(500, 'Server failed to process your request.');
 }

@@ -1,3 +1,4 @@
+echo Deploying into the $deployed_environment environment.
 npm install
 
 # Execute the SAM CLI Deploy command to upload the Lambdas to S3 and deploy them
