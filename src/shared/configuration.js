@@ -16,7 +16,8 @@ class Configuration {
         this.data = {
             dynamodb_projectTable: process.env.dynamodb_projectTable,
             dynamodb_projectEventSourceTable: process.env.dynamodb_projectEventSourceTable,
-            dynamodb_endpointUrl: process.env.dynamodb_endpointUrl
+            dynamodb_endpointUrl: process.env.dynamodb_endpointUrl,
+            pageSize: 20
         };
         
         // Force the environment to be 'local' if nothing is set to prevent
