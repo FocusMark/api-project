@@ -7,6 +7,10 @@ const FMErrors = {
         code: 4041,
         message: 'Invalid API route requested.'
     },
+    RECORD_NOT_FOUND: {
+        code: 4042,
+        message: 'Not found'
+    },
     JSON_MALFORMED: {
         code: 4221,
         message: 'Json given is malformed.'

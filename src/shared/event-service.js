@@ -22,11 +22,11 @@ class EventService {
         await this.publish(project, eventType, eventAttributes);
     }
     
-    async publishProjectDeleted(project) {
+    async publishProjectDeleted(projectId) {
         const eventType = 'project-deleted';
         let eventAttributes = this.getEventAttributes(eventType);
         
-        await this.publish(project, eventType, eventAttributes);
+        await this.publish({projectId: projectId}, eventType, eventAttributes);
     }
     
     async publish(message, subject, attributes) {
