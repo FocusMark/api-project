@@ -24,7 +24,7 @@ exports.putHandler = async (event, context) => {
         }
         
         await saveProject(existingProject, newProject, user);
-        await eventService.publishProjectUpdated(newProject);
+        await eventService.publishProjectUpdated(newProject, user.userId);
         
         let responseViewModel = { projectId: newProject.projectId };
         return new Response(200, responseViewModel, null, newProject.projectId);
