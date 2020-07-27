@@ -34,14 +34,21 @@ async function deleteProject(userId, projectId) {
     let params = {
         TableName: configuration.data.dynamodb_projectTable,
         Key: { userId: userId, projectId: projectId },
+        ReturnValues: 'ALL_OLD'
     };
     
+    let fetchedProject;
     try {
-        let fetchedProject = await dynamoDbClient.delete(params).promise();
-        console.info(fetchedProject);
+        fetchedProject = await dynamoDbClient.delete(params).promise();
+        
     } catch(err) {
         console.info(err);
         throw AWSErrors.DYNAMO_GET_PROJECT_FAILED;
+    }
+    
+    console.info(fetchedProject);
+    if (!fetchedProject.Attributes) {
+        throw FMErrors.RECORD_NOT_FOUND;
     }
 }
 
@@ -50,6 +57,7 @@ function handleError(err) {
         case FMErrors.MISSING_AUTHORIZATION.code:
             return new Response(401, null, err);
         case FMErrors.INVALID_ROUTE.code:
+        case FMErrors.RECORD_NOT_FOUND.code:
             return new Response(404, null, err);
         case AWSErrors.DYNAMO_GET_PROJECT_FAILED.code:
             return new Response(500, null, err);
