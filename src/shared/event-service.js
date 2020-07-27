@@ -8,23 +8,23 @@ class EventService {
         this.configuration = new Configuration();
     }
     
-    async publishProjectCreated(project) {
+    async publishProjectCreated(project, userId) {
         const eventType = 'project-created';
-        let eventAttributes = this.getEventAttributes(eventType);
+        let eventAttributes = this.getEventAttributes(eventType, userId);
         
         await this.publish(project, eventType, eventAttributes);
     }
     
-    async publishProjectUpdated(project) {
+    async publishProjectUpdated(project, userId) {
         const eventType = 'project-updated';
-        let eventAttributes = this.getEventAttributes(eventType);
+        let eventAttributes = this.getEventAttributes(eventType, userId);
         
         await this.publish(project, eventType, eventAttributes);
     }
     
-    async publishProjectDeleted(projectId) {
+    async publishProjectDeleted(projectId, userId) {
         const eventType = 'project-deleted';
-        let eventAttributes = this.getEventAttributes(eventType);
+        let eventAttributes = this.getEventAttributes(eventType, userId);
         
         await this.publish({projectId: projectId}, eventType, eventAttributes);
     }
@@ -44,7 +44,7 @@ class EventService {
         console.info('Publish completed.');
     }
     
-    getEventAttributes(eventType) {
+    getEventAttributes(eventType, userId) {
         return {
             Version: {
                 DataType: 'String',
@@ -53,6 +53,10 @@ class EventService {
             Event: {
                 DataType: 'String',
                 StringValue: eventType
+            },
+            Owner: {
+                DataType: 'String',
+                StringValue: userId
             }
         };
     }

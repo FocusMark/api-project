@@ -18,7 +18,7 @@ exports.postHandler = async (event, context) => {
         let project = createProject(user, event);
         
         await saveProject(user, project);
-        await eventService.publishProjectCreated(project);
+        await eventService.publishProjectCreated(project, user.userId);
         
         let responseViewModel = { projectId: project.projectId };
         return new Response(201, responseViewModel, null, project.projectId);

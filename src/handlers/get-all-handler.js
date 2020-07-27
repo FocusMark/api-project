@@ -32,7 +32,7 @@ async function getAllProjects(event, user) {
             ':uid': user.userId,
         },
         KeyConditionExpression: 'userId = :uid',
-        Limit: 20,
+        Limit: configuration.data.pageSize,
         ReturnConsumedCapacity: "TOTAL",
     };
     

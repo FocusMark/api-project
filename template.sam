@@ -334,7 +334,7 @@ Resources:
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
 
-  # IAM Role used by the Lambda for handling HTTP POST requests that create projects.
+  # IAM Role used by the Lambda for handling HTTP GET requests that queries projects.
   getAllItemsFunctionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -373,7 +373,7 @@ Resources:
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
         
-  # IAM Role used by the Lambda for handling HTTP POST requests that create projects.
+  # IAM Role used by the Lambda for handling HTTP GET requests that queries projects by id.
   getItemFunctionRole:
     Type: AWS::IAM::Role
     Properties:

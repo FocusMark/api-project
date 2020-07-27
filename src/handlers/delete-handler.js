@@ -19,7 +19,7 @@ exports.deleteHandler = async (event, context) => {
         }
 
         await deleteProject(user.userId, event.pathParameters.projectId);
-        await eventService.publishProjectDeleted(event.pathParameters.projectId);
+        await eventService.publishProjectDeleted(event.pathParameters.projectId, user.userId);
         
         return new Response(200);
     } catch(err) {
