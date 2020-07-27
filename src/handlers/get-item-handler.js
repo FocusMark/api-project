@@ -33,31 +33,42 @@ async function getProject(userId, projectId) {
         ReturnConsumedCapacity: "TOTAL",
     };
     
+    let fetchedProject;
     try {
-        let fetchedProject = await dynamoDbClient.get(params).promise();
+        fetchedProject = await dynamoDbClient.get(params).promise();
         console.info(fetchedProject);
+    } catch(err) {
+        console.info(err);
+        throw AWSErrors.DYNAMO_GET_PROJECT_FAILED;
+    }
+    
+    if (fetchedProject.Item) {
         if (Object.keys(fetchedProject).length === 0 || Object.keys(fetchedProject.Item).length == 0) {
             console.info('Project does not exist and can not be updated');
             return null;
         }
-    
+        
         console.info('Verified project exists');
         delete fetchedProject.Item.createdAt;
         delete fetchedProject.Item.updatedAt;
         delete fetchedProject.Item.userId;
         delete fetchedProject.Item.clientsUsed;
-    
-        return fetchedProject.Item;
-    } catch(err) {
-        console.info(err);
-        throw AWSErrors.DYNAMO_GET_PROJECT_FAILED;
+    } else {
+        console.info('No records found.');
+        throw FMErrors.RECORD_NOT_FOUND;
     }
+
+    return fetchedProject.Item;
 }
 
 function handleError(err) {
     switch(err.code) {
         case FMErrors.MISSING_AUTHORIZATION.code:
             return new QueryResponse(401, null, err);
+        case FMErrors.RECORD_NOT_FOUND.code:
+            return new QueryResponse(404, null, err);
+        case FMErrors.INVALID_ROUTE.code:
+            return new QueryResponse(404, null, err);
         case AWSErrors.DYNAMO_GET_PROJECT_FAILED.code:
             return new QueryResponse(500, null, err);
     }

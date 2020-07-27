@@ -38,8 +38,15 @@ exports.putHandler = async (event, context) => {
 function createProject(user, event) {
     console.info('Updating Project from request');
     let viewModel; 
-    viewModel = new Project(user, JSON.parse(event.body));
+    let body;
     
+    try {
+        body =  JSON.parse(event.body);
+    } catch(err) {
+        throw FMErrors.JSON_MALFORMED;
+    }
+    
+    viewModel = new Project(user, body);
     if (!event.pathParameters || !event.pathParameters.projectId) {
         throw FMErrors.INVALID_ROUTE;
     }

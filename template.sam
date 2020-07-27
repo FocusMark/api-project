@@ -54,15 +54,21 @@ Resources:
           DataTraceEnabled: 'true'
           HttpMethod: '*'
       Auth:
-        DefaultAuthorizer: ApiGetProjectAuthorizer
+        DefaultAuthorizer: ApiReadProjectAuthorizer
         Authorizers:
-          ApiPostProjectAuthorizer:
+          ApiDeleteProjectAuthorizer:
+            UserPoolArn: {'Fn::ImportValue': !Sub 'focusmark-${TargetEnvironment}-userpool'}
+            Identity: 
+              Header: 'Authorization'
+            AuthorizationScopes:
+              - "app.focusmark.api.project/project.delete"
+          ApiWriteProjectAuthorizer:
             UserPoolArn: {'Fn::ImportValue': !Sub 'focusmark-${TargetEnvironment}-userpool'}
             Identity: 
               Header: 'Authorization'
             AuthorizationScopes:
               - "app.focusmark.api.project/project.write"
-          ApiGetProjectAuthorizer:
+          ApiReadProjectAuthorizer:
             UserPoolArn: {'Fn::ImportValue': !Sub 'focusmark-${TargetEnvironment}-userpool'}
             Identity: 
               Header: 'Authorization'
@@ -90,7 +96,7 @@ Resources:
           Type: Api
           Properties:
             Auth:
-              Authorizer: ApiPostProjectAuthorizer
+              Authorizer: ApiWriteProjectAuthorizer
             Path: /
             Method: POST
             RestApiId:
@@ -117,9 +123,36 @@ Resources:
           Type: Api
           Properties:
             Auth:
-              Authorizer: ApiPostProjectAuthorizer
+              Authorizer: ApiWriteProjectAuthorizer
             Path: /{projectId}
             Method: PUT
+            RestApiId:
+              Ref: ProjectApi
+              
+  deleteCommandFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_delete'
+      Handler: src/handlers/delete-handler.deleteHandler
+      Runtime: nodejs12.x
+      MemorySize: 256
+      Timeout: 10
+      Description: HTT DELETE handler for the /project API endpoint
+      Role: !GetAtt deleteItemFunctionRole.Arn
+      Environment:
+        Variables:
+          deployed_environment: !Ref TargetEnvironment
+          dynamodb_projectTable: !Ref ProjectTable
+          dynamodb_endpointUrl: ''
+          sns_project_topic: !Ref ProjectTopic
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Auth:
+              Authorizer: ApiDeleteProjectAuthorizer
+            Path: /{projectId}
+            Method: DELETE
             RestApiId:
               Ref: ProjectApi
 
@@ -143,7 +176,7 @@ Resources:
           Type: Api
           Properties:
             Auth:
-              Authorizer: ApiGetProjectAuthorizer
+              Authorizer: ApiReadProjectAuthorizer
             Path: /
             Method: GET
             RestApiId:
@@ -169,7 +202,7 @@ Resources:
           Type: Api
           Properties:
             Auth:
-              Authorizer: ApiGetProjectAuthorizer
+              Authorizer: ApiReadProjectAuthorizer
             Path: /{projectId}
             Method: GET
             RestApiId:
@@ -201,6 +234,47 @@ Resources:
               - Effect: Allow
                 Action: 
                   - 'dynamodb:PutItem'
+                Resource: !GetAtt ProjectTable.Arn
+              - Effect: Allow
+                Action: 
+                  - 'xray:CreateGroup'
+                  - 'xray:CreateSamplingRule'
+                Resource: 
+                  - 'arn:aws:xray:*:*:group/*/*'
+                  - 'arn:aws:xray:*:*:sampling-rule/*'
+              - Effect: Allow
+                Action:
+                  - 'xray:PutTelemetryRecords'
+                  - 'xray:PutTraceSegments'
+                Resource: '*'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        
+  deleteItemFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: !Sub 'Allows deleting existing records from the ${ProjectTable} table'
+      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_delete'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_delete'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 'sns:Publish'
+                Resource: !Ref ProjectTopic
+              - Effect: Allow
+                Action: 
+                  - 'dynamodb:DeleteItem'
                 Resource: !GetAtt ProjectTable.Arn
               - Effect: Allow
                 Action: 
