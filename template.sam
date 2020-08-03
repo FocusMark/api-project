@@ -1,6 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: >-
-  FocusMark REST services for the Project API. Includes API, SNS Topic, DynamoDB and Cognito Resource Server
+Description: 'REST services for the Project API. Includes API Gateway, Lambdas, SNS Topic and DynamoDB Table'
 
 # Transform section specifies one or more macros that AWS CloudFormation uses to process your template
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
@@ -11,6 +10,10 @@ Parameters:
   TargetEnvironment:
     Description: 'Examples can be dev, test or prod'
     Type: 'String'
+    
+  ProductName:
+    Description: 'Represents the name of the product you want to call the deployment'
+    Type: 'String'
 
 Resources:
 
@@ -18,7 +21,7 @@ Resources:
   ProjectTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub 'focusmark-${TargetEnvironment}-dynamodb-projectstore'
+      TableName: !Sub '${ProductName}-${TargetEnvironment}-dynamodb-projectstore'
       AttributeDefinitions:
         - AttributeName: userId
           AttributeType: S
@@ -37,8 +40,8 @@ Resources:
   ProjectTopic:
     Type: AWS::SNS::Topic
     Properties:
-      DisplayName: !Sub 'focusmark-${TargetEnvironment}-sns-project'
-      TopicName: !Sub 'focusmark-${TargetEnvironment}-sns-project'
+      DisplayName: !Sub '${ProductName}-${TargetEnvironment}-sns-project'
+      TopicName: !Sub '${ProductName}-${TargetEnvironment}-sns-project'
 
   # API Gateway used by the Project API.
   # Auth setup example from https://github.com/awslabs/serverless-application-model/blob/master/examples/2016-10-31/api_cognito_auth/template.yaml
@@ -46,7 +49,7 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       StageName: !Ref TargetEnvironment
-      Name: !Sub 'focusmark-${TargetEnvironment}-apigateway-project'
+      Name: !Sub '${ProductName}-${TargetEnvironment}-apigateway-project'
       MethodSettings:
         - LoggingLevel: 'INFO'
           ResourcePath: '/'
@@ -57,28 +60,28 @@ Resources:
         DefaultAuthorizer: ApiReadProjectAuthorizer
         Authorizers:
           ApiDeleteProjectAuthorizer:
-            UserPoolArn: {'Fn::ImportValue': !Sub 'focusmark-${TargetEnvironment}-userpool'}
+            UserPoolArn: {'Fn::ImportValue': !Sub '${ProductName}-${TargetEnvironment}-customeruserpoolarn'}
             Identity: 
               Header: 'Authorization'
             AuthorizationScopes:
-              - "app.focusmark.api.project/project.delete"
+              - !Sub "app.${ProductName}.api.project/project.delete"
           ApiWriteProjectAuthorizer:
-            UserPoolArn: {'Fn::ImportValue': !Sub 'focusmark-${TargetEnvironment}-userpool'}
+            UserPoolArn: {'Fn::ImportValue': !Sub '${ProductName}-${TargetEnvironment}-customeruserpoolarn'}
             Identity: 
               Header: 'Authorization'
             AuthorizationScopes:
-              - "app.focusmark.api.project/project.write"
+              - !Sub "app.${ProductName}.api.project/project.write"
           ApiReadProjectAuthorizer:
-            UserPoolArn: {'Fn::ImportValue': !Sub 'focusmark-${TargetEnvironment}-userpool'}
+            UserPoolArn: {'Fn::ImportValue': !Sub '${ProductName}-${TargetEnvironment}-customeruserpoolarn'}
             Identity: 
               Header: 'Authorization'
             AuthorizationScopes:
-              - "app.focusmark.api.project/project.read"
+              - !Sub "app.${ProductName}.api.project/project.read"
               
   postCommandFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_post'
+      FunctionName: !Sub '${ProductName}-${TargetEnvironment}-lambda-api_project_post'
       Handler: src/handlers/post-handler.postHandler
       Runtime: nodejs12.x
       MemorySize: 256
@@ -105,7 +108,7 @@ Resources:
   putCommandFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_put'
+      FunctionName: !Sub '${ProductName}-${TargetEnvironment}-lambda-api_project_put'
       Handler: src/handlers/put-handler.putHandler
       Runtime: nodejs12.x
       MemorySize: 256
@@ -132,7 +135,7 @@ Resources:
   deleteCommandFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_delete'
+      FunctionName: !Sub '${ProductName}-${TargetEnvironment}-lambda-api_project_delete'
       Handler: src/handlers/delete-handler.deleteHandler
       Runtime: nodejs12.x
       MemorySize: 256
@@ -160,7 +163,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/get-all-handler.getAllHandler
-      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_getall'
+      FunctionName: !Sub '${ProductName}-${TargetEnvironment}-lambda-api_project_getall'
       Runtime: nodejs12.x
       MemorySize: 256
       Timeout: 100
@@ -186,7 +189,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/handlers/get-item-handler.getItemHandler
-      FunctionName: !Sub 'focusmark-${TargetEnvironment}-lambda-api_project_getitem'
+      FunctionName: !Sub '${ProductName}-${TargetEnvironment}-lambda-api_project_getitem'
       Runtime: nodejs12.x
       MemorySize: 256
       Timeout: 100
@@ -213,7 +216,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       Description: !Sub 'Allows inserting new records into the ${ProjectTable} table'
-      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_post'
+      RoleName: !Sub '${ProductName}-${TargetEnvironment}-role-api_project_post'
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -224,7 +227,7 @@ Resources:
             Action:
               - 'sts:AssumeRole'
       Policies:
-        - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_post'
+        - PolicyName: !Sub '${ProductName}-${TargetEnvironment}-policy-api_project_post'
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -254,7 +257,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       Description: !Sub 'Allows deleting existing records from the ${ProjectTable} table'
-      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_delete'
+      RoleName: !Sub '${ProductName}-${TargetEnvironment}-role-api_project_delete'
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -265,7 +268,7 @@ Resources:
             Action:
               - 'sts:AssumeRole'
       Policies:
-        - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_delete'
+        - PolicyName: !Sub '${ProductName}-${TargetEnvironment}-policy-api_project_delete'
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -296,7 +299,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       Description: !Sub 'Allows inserting new records into the ${ProjectTable} table that represent updates to a Project'
-      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_put'
+      RoleName: !Sub '${ProductName}-${TargetEnvironment}-role-api_project_put'
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -307,7 +310,7 @@ Resources:
             Action:
               - 'sts:AssumeRole'
       Policies:
-        - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_put'
+        - PolicyName: !Sub '${ProductName}-${TargetEnvironment}-policy-api_project_put'
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -339,7 +342,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       Description: !Sub 'Allows querying records from the ${ProjectTable} table that represent a Project'
-      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_getall'
+      RoleName: !Sub '${ProductName}-${TargetEnvironment}-role-api_project_getall'
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -350,7 +353,7 @@ Resources:
             Action:
               - 'sts:AssumeRole'
       Policies:
-        - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_getall'
+        - PolicyName: !Sub '${ProductName}-${TargetEnvironment}-policy-api_project_getall'
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -378,7 +381,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       Description: !Sub 'Allows getting a single record from the ${ProjectTable} table that represent a Project'
-      RoleName: !Sub 'focusmark-${TargetEnvironment}-role-api_project_getitem'
+      RoleName: !Sub '${ProductName}-${TargetEnvironment}-role-api_project_getitem'
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -389,7 +392,7 @@ Resources:
             Action:
               - 'sts:AssumeRole'
       Policies:
-        - PolicyName: !Sub 'focusmark-${TargetEnvironment}-policy-api_project_getitem'
+        - PolicyName: !Sub '${ProductName}-${TargetEnvironment}-policy-api_project_getitem'
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -420,9 +423,9 @@ Outputs:
     Description: "ID of the Project API resource"
     Value: !Ref ProjectApi
     Export:
-      Name: !Sub 'focusmark-${TargetEnvironment}-apigateway-project'
+      Name: !Sub '${ProductName}-${TargetEnvironment}-apigateway-project'
   ProjectTopic:
     Description: "SNS Topic for publishing notifications related to Projects"
     Value: !Ref ProjectTopic
     Export:
-      Name: !Sub "focusmark-${TargetEnvironment}-sns-ProjectTopic"
+      Name: !Sub "${ProductName}-${TargetEnvironment}-sns-ProjectTopic"
