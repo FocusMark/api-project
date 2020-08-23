@@ -4,7 +4,7 @@ echo Deploying into the $deployed_environment environment.
 npm install
 
 # Execute the SAM CLI Deploy command to upload the Lambdas to S3 and deploy them
-sam_stack_name=$product_name-"$deployed_environment"-sam-api-project
+sam_stack_name=$product_name-"$deployed_environment"-sam-api-projectserverless
 sam_template_file='template.sam'
 sam_s3_bucket_name=$product_name-$deployed_environment-s3-deployments
 
@@ -21,7 +21,7 @@ sam deploy \
 
 # Execute the CloudFormation template needed to map the API Gateway associated with the above SAM tempalte
 # to the existing custom domain deployed with the core infrastructure
-cf_stack_name=focusmark-"$deployed_environment"-cf-apiProjectDomainMapping
+cf_stack_name=focusmark-"$deployed_environment"-cf-api-projectroute
 cf_template_file='domain-mapping.yaml'
 
 echo Deploying the $cf_stack_name stack.
