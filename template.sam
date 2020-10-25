@@ -53,8 +53,8 @@ Resources:
       MethodSettings:
         - LoggingLevel: 'INFO'
           ResourcePath: '/'
-          MetricsEnabled: 'true'
-          DataTraceEnabled: 'true'
+          MetricsEnabled: true
+          DataTraceEnabled: true
           HttpMethod: '*'
       Auth:
         DefaultAuthorizer: ApiReadProjectAuthorizer
