@@ -11,6 +11,9 @@ The repository consists of bash scripts, JavaScript Lambdas and CloudFormation t
 - [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv1.html)
 - [SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
 
+## Optional
+- [cfn-lint](https://github.com/aws-cloudformation/cfn-python-lint)
+
 ### Environment Variables
 
 In order to run the deployment script you must have your environment set up with a few environment variables. The following table outlines the environment variables required with example values.
