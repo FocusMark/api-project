@@ -50,6 +50,7 @@ Resources:
     Properties:
       StageName: !Ref TargetEnvironment
       Name: !Sub '${ProductName}-${TargetEnvironment}-apigateway-project'
+      TracingEnabled: true
       MethodSettings:
         - LoggingLevel: 'INFO'
           ResourcePath: '/'
