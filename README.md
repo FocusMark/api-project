@@ -50,7 +50,6 @@ The core infrastructure in this repository consists of the following:
 - 2 NodeJS Lambdas - for for HTTP GET (to retrieve all records) and one for HTTP GET by Id
 - 5 IAM Roles, one per Lambda.
 - SNS Topic for Project record change notification
-- API Gateway bound to the Custom Domain created by the [API Infrastructure Repository](https://github.com/focusmark/api-infrastructure).
 
 ![Architecture](/docs/api-architecture-resources.jpeg)
 
