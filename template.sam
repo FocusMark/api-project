@@ -51,12 +51,6 @@ Resources:
       StageName: !Ref TargetEnvironment
       Name: !Sub '${ProductName}-${TargetEnvironment}-apigateway-project'
       TracingEnabled: true
-      MethodSettings:
-        - LoggingLevel: 'INFO'
-          ResourcePath: '/'
-          MetricsEnabled: true
-          DataTraceEnabled: true
-          HttpMethod: '*'
       Auth:
         DefaultAuthorizer: ApiReadProjectAuthorizer
         Authorizers:
